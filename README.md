@@ -3,8 +3,8 @@
 Static landing site for the Snyk VulnBump benchmark: what the benchmark
 measured, how, and the results, presented graphically. It shares a technical
 foundation with the [Snyk VulnBench website](https://vulnbench.com/) (Astro,
-typed data, accessible charts) but has its own visual identity, built on the
-Snyk 2026 brand system.
+typed data, accessible charts) but has its own visual identity: the "2b"
+Gatehouse theme (Snyk purple for PASS, orange for FAIL, solid fills only).
 
 > **Status: draft.** Agent figures come from the three harness reports of the
 > 2026-10-04/05 single-upgrade runs (Evo Remediation Agent, harness `remy`;
@@ -12,8 +12,8 @@ Snyk 2026 brand system.
 > (`benchmarking/reports/*-easy`). The site follows draft v2 of the VulnBump
 > paper (Pasiunaite et al., 9 October 2026), including its names and its
 > non-agent baseline, the package manager bump. Every agent number in the
-> paper is reproduced here and agrees with the reports. While `release.status` is `"draft"`, every page shows a review
-> banner and is marked `noindex`.
+> paper is reproduced here and agrees with the reports. While `release.status` is `"draft"`, the header tag reads
+> "1.0 draft" and every page is marked `noindex`.
 
 ## Stack
 
@@ -66,9 +66,10 @@ paper's Tables 2–4 and Figures 1 and 4–6 value by value.
 | Field | Drives |
 | --- | --- |
 | `release`, `tagline`, `researchQuestion`, `summary`, `scope` | Hero, footer, page metadata |
-| `headline` | Hero numeral (highlighted configuration) and comparison chips |
-| `paper`, `citation` | Paper title, authors and date; BibTeX in the closing section |
-| `highlights`, `findings`, `methodology` | Results "at a glance", findings index (the paper's main findings), the three-phase pipeline (Figure 3) |
+| `headline` | Hero stat (highlighted configuration) |
+| `paper`, `citation` | Paper title, authors and date; BibTeX on the data page |
+| `highlights`, `findings`, `methodology` | Home highlights, the results findings list (the paper's main findings), the methodology pipeline cards (Figure 3) |
+| `configurations[].subtitle`, `baseline.subtitle` | One line under each harness in the funnel lanes and leaderboard |
 | `metrics` + `configurations[].gates`, `values` | Head-to-head scorecard (Table 2): four gates, "project still works", PASS, instances fixed |
 | `configurations[].macro`, `macroFixed`, `reposAllPass`, `reposNonePass` | Repository-level results (Table 3) |
 | `flowSteps` + `configurations[].flow` | Shipping-gates funnel, and failures by first failed gate (Figure 4) |
@@ -92,36 +93,45 @@ To add a new run, add or replace a configuration object; exactly one must be
 
 ## Design
 
-The visual system follows the Snyk 2026 brand guidelines rather than
-VulnBench's light editorial look:
+The site uses the **2b "Gatehouse" theme** from the Claude Design handoff
+(`design_handoff_vulnbump_2b/`): every upgrade passes or fails four gates, so
+PASS is solid purple and FAIL solid orange, with no gradients.
 
-- **Midnight canvas, no light mode.** The brand disallows white canvases, so
-  the site is dark-only; corner fabric sits on one diagonal (hero bottom-right,
-  closing statement top-left).
-- **Gradient keywords as inline SVG**, never `background-clip: text`, one per
-  section (`src/components/brand/GradientText.astro`).
-- **Numeral-as-hero**: the headline share drawn as a gradient neon outline with
-  a glow (`HeroNumeral.astro`), sized to its column with container units.
-- **Geist Mono** for eyebrows (`// LABEL`), navigation, buttons, and data
-  labels; pill buttons; gradient borders drawn with per-edge `border-*`.
-- Only the five locked brand colours, Midnight, and white alphas.
+- **Tokens** (`src/styles/tokens.css`, from the handoff's drop-in): `--paper`
+  #0B0613, `--panel` #14091F, `--pass` #8F3CE8 (text tint `--pass-text`
+  #C481F3), `--fail` #FF8904 and the fail stack by gate, `--accent` and the
+  focus ring. Every older token name is kept, so `--pink` now means the
+  lavender accent.
+- **Theme** (`src/styles/theme-2b.css`, loaded after `global.css` by
+  `BaseLayout`): buttons, eyebrows, the lane grid, leaderboard, pills, caveats
+  and fail stacks. Its pass-on-fail bar is `.passtrack`; the handoff's `.track`
+  name was already used by the existing charts.
+- **Agent shades**: the highlighted agent is solid `--pass`; the others are
+  `--pass` mixed into the panel at the theme's fixed steps (0.62 for Claude
+  Code + Snyk scan, 0.34 for Claude Code unaided), so counts inside the bars
+  stay legible. The non-agent baseline is a dashed outline.
+- **Type**: Geist 600 headlines (tracking -0.04em), Geist Mono for labels and
+  numbers. Purple #8F3CE8 is about 3.9:1 on the paper, so it carries fills,
+  never small text.
 
-Run the brand's mechanical audit (`apply-brand-guidelines/scripts/audit_html.py`)
-against built pages after visual changes.
+The 2b palette departs from the Snyk 2026 locked palette, so the brand's
+mechanical audit (`apply-brand-guidelines/scripts/audit_html.py`) flags it;
+brand review signs off on the theme as a whole.
 
 ## Charts
 
 | Component | Form |
 | --- | --- |
-| `GateFunnel` | Signature chart: share of attempts surviving each gate, one line per configuration |
+| `GateFunnel` | Signature chart: lane grid, one lane per harness, purple block per stage with the drop below it in orange; gate headers select a gate and fill the detail row |
+| `Leaderboard` | Agents ranked by a sortable column, filterable by package manager; the baseline is an unranked reference row |
 | `GateScorecard` | Head-to-head bars per Table 2 row, best value tagged (including rows a baseline wins) |
 | `RepoLevelTable` | Table 3: macro rates with intervals, repositories all or none passing, remaining instances |
 | `PairedComparison` | McNemar and bootstrap results, plus an UpSet-style list of which agents passed each upgrade |
 | `AdviceSplit` | Table 4: PASS rates on the Snyk-advice-solvable split and the rest, regressions and value-add |
-| `FailureComparison` | Figure 4 (first failed gate) and Table 4 (root causes) |
+| `FailureComparison` | Figure 4 as one fail stack per harness (first failed gate) and Table 5 (root causes) |
 | `UpgradeJump` | Figure 5: PASS rate by recommended version jump |
 | `EcosystemComparison` | Figure 6: macro PASS rate by package manager, grouped bars |
-| `VulnBreakdown` | Figure 7: per-vulnerability fix/pass rates by fix difficulty, dependency type, package manager, severity |
+| `VulnBreakdown` | Explorer (Figure 7): per-vulnerability pass or fix rates in buckets, a purple bar per agent on an orange track |
 | `SelectionFunnel` | Figure 1: candidates by source, then each filter with kept and dropped counts |
 | `ProductionComparison` | Figure 2: production against VulnBump, grouped bars and box plots |
 | `RelatedWorkTable` | Table 1: benchmarks compared on the checks used to score an attempt |
@@ -129,14 +139,9 @@ against built pages after visual changes.
 | `IntegrityTable` | Quality signals side by side |
 
 Each chart labels its marks directly, supports keyboard focus, and ships an
-exact-value table and provenance caption in the server-rendered HTML. The
-highlighted configuration is Hot Pink; the other agents are muted white, and the non-agent baseline is a dashed outline.
-
-Categorical series use the locked brand hues in the order Hot Pink, Amber,
-Purple, Orange-Red. On Midnight that order passes colour-vision-deficiency and
-normal-vision separation checks. Purple is 2.6:1 against Midnight and the
-locked palette cannot meet an even-lightness band, so labels and tables must
-stay visible.
+exact-value table and provenance caption in the server-rendered HTML. Agents
+are distinguished by labels and fixed purple shades (never by rank), so
+labels and tables must stay visible.
 
 ## Deploying to Vercel
 
@@ -159,15 +164,14 @@ src/
   data/          benchmark.json (dataset), schema.ts (contract), index.ts (accessors, nav)
   components/
     charts/      React chart islands
-    home/        homepage sections
-    results/     results-page sections (scorecard, paired, failures, version jump, ...)
-    methodology/ dataset selection, production comparison, related-work table
-    brand/       gradient keyword and neon numeral (inline SVG)
-    site/        header, footer, page hero, fabric, logo
-  layouts/       BaseLayout (metadata, theme bootstrap, preview banner)
+    home/        homepage sections (hero, highlights, leaderboard, closing panel)
+    results/     results-page sections (findings, scorecard, paired, failures, version jump, ...)
+    methodology/ overview blocks, dataset selection, production comparison, related-work table
+    site/        header, footer, page hero, wordmark, citation
+  layouts/       BaseLayout (metadata, stylesheets)
   pages/         /, /results, /methodology, /data, /about, 404, data downloads
-  styles/        tokens.css, charts.css, global.css
-public/brand/    approved Snyk 2026 assets (see PROVENANCE.md for checksums)
+  styles/        tokens.css, theme-2b.css, charts.css, global.css
+public/brand/    logo-mark.svg (2b mark: ascending purple steps, the last cut short in orange)
 tests/           Vitest suites
 ```
 

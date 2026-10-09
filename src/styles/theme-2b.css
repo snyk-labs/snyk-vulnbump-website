@@ -1,0 +1,95 @@
+/*
+ * theme-2b.css - component styles for the 2b "Gatehouse" design.
+ * Import once at the end of src/styles/global.css:  @import "./theme-2b.css";
+ * Overrides a few global.css rules (buttons, tags, rules) and adds new blocks.
+ */
+
+/* ---- Global overrides ---- */
+a { text-decoration-color: var(--accent); }
+::selection { background: rgba(143, 60, 232, 0.5); color: #fff; }
+.eyebrow::before { content: ""; }                       /* 2b drops the "//" kicker */
+.eyebrow { color: var(--ink-faint); letter-spacing: 0.14em; }
+h1, h2 { font-weight: 600; letter-spacing: -0.04em; }
+.button { background: var(--pass); border-color: var(--pass); color: var(--pass-ink); border-radius: 0.5rem; font-family: var(--font-sans); font-size: 0.95rem; letter-spacing: 0; text-transform: none; font-weight: 600; }
+.button:hover { border-color: var(--accent); }
+.button.secondary { background: transparent; border-color: var(--rule-strong); color: #fff; }
+.button.secondary:hover { border-color: var(--accent); background: var(--panel-hover); }
+.tag--snyk { border-color: var(--accent); }
+.gradient-border { border: 1px solid var(--rule-strong); }  /* gradient removed */
+.chart__segmented button[aria-pressed="true"] { background: var(--pass); color: var(--pass-ink); }
+.chart__readout { border-left-color: var(--pass); }
+.scorecard tr.is-highlight th { box-shadow: inset 2px 0 0 var(--pass); }
+.chart__plot g:focus-visible .chart__focus { stroke: var(--accent); }
+.chart__plot, .chart__table { background: var(--panel); border-color: var(--rule); }
+
+/* ---- Hero stat ---- */
+.hero-stat { padding-left: var(--space-6); border-left: 1px solid var(--rule); }
+.hero-stat__value { color: var(--pass-text); font-size: clamp(5rem, 10vw, 8rem); font-weight: 600; letter-spacing: -0.05em; line-height: 0.9; }
+.hero-stat__label { margin-top: var(--space-3); color: var(--ink); font-size: 1.05rem; }
+.hero-stat__meta { margin-top: 0.5rem; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.75rem; }
+.accent-pass { color: var(--pass-text); }
+.accent-fail { color: var(--fail-text); }
+
+/* ---- Gate funnel (lane grid): <div class="gatelane-grid"> ---- */
+.gatelane-grid { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); overflow: hidden; --cols: 15rem repeat(5, minmax(0, 1fr)); }
+.gatelane-head, .gatelane { display: grid; grid-template-columns: var(--cols); border-bottom: 1px solid var(--rule); }
+.gatelane-head__corner { padding: 1.1rem 1.5rem; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.5; }
+.gatelane-head button { padding: 1.1rem 1rem; border: 0; border-left: 1px solid var(--rule); background: transparent; color: var(--ink-soft); text-align: left; cursor: pointer; }
+.gatelane-head button[aria-pressed="true"] { background: var(--pass-tint); color: #fff; }
+.gatelane-head small { display: block; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.gatelane-head button[aria-pressed="true"] small { color: var(--pass-text); }
+.gatelane__name { display: flex; flex-direction: column; justify-content: center; gap: 0.25rem; padding: 1.25rem 1.5rem; }
+.gatelane__name strong { color: #fff; font-size: 1rem; font-weight: 600; }
+.gatelane__name span { color: var(--ink-faint); font-size: 0.8rem; }
+.gatelane__final { margin-top: 0.5rem; color: #fff; font-family: var(--font-mono); font-size: 1.4rem; font-weight: 500; }
+.gatelane--highlight .gatelane__final { color: var(--pass-text); }
+.gatelane__final small { color: var(--ink-faint); font-size: 0.7rem; letter-spacing: 0.1em; }
+.gatelane__stage { display: flex; flex-direction: column; padding: 1.25rem 0.875rem 0.875rem; border-left: 1px solid var(--rule); }
+.gatelane__stage[aria-current="true"] { background: var(--pass-tint); }
+.gatelane__bars { display: flex; flex-direction: column; height: 7.5rem; }
+.gatelane__pass { background: var(--pass); opacity: var(--op, 1); border-radius: 3px 3px 0 0; padding: 0.5rem 0.625rem; color: var(--pass-ink); font-family: var(--font-mono); font-size: 0.95rem; font-weight: 600; }
+.gatelane__drop { background: var(--fail); }
+.gatelane__loss { height: 1.1rem; margin-top: 0.5rem; color: var(--fail-text); font-family: var(--font-mono); font-size: 0.8rem; }
+/* set --op on the lane: highlighted 1, then var(--pass-op-2), var(--pass-op-3) */
+.gate-detail { display: grid; grid-template-columns: 15rem 1fr; background: var(--pass-tint); }
+.gate-detail__kicker { padding: 1.5rem; color: var(--pass-text); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.gate-detail__body { display: grid; gap: 1.75rem; grid-template-columns: 1.2fr repeat(3, minmax(0, 1fr)); padding: 1.5rem 1.5rem 1.5rem 1rem; }
+.gate-detail__loss { margin-top: 0.4rem; color: var(--fail-text); font-family: var(--font-mono); font-size: 1.75rem; font-weight: 500; }
+
+/* ---- Leaderboard ---- */
+.board { border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.board__row { display: grid; align-items: center; border-top: 1px solid var(--rule); grid-template-columns: 4rem 1.5fr 2fr repeat(4, minmax(0, 1fr)); }
+.board__row--head { border-top: 0; background: var(--panel); color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.board__row--head button { padding: 0.875rem 0.75rem; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-align: left; text-transform: inherit; cursor: pointer; }
+.board__row--head button[aria-sort] { color: #fff; }
+.board__row--highlight { background: var(--pass-tint); }
+.board__cell { padding: 1.375rem 0.75rem; font-family: var(--font-mono); font-size: 0.95rem; color: var(--ink-soft); }
+.board__cell--best { color: var(--pass-text); }
+.passbar { flex: 1; height: 0.5rem; overflow: hidden; border-radius: 2px; background: var(--fail-dim); }
+.passbar > span { display: block; height: 100%; background: var(--pass); }
+
+/* ---- Filter pills ---- */
+.pill { padding: 0.45rem 0.75rem; border: 1px solid var(--rule-strong); border-radius: var(--radius-pill); background: transparent; color: var(--ink-soft); font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; }
+.pill[aria-pressed="true"] { border-color: var(--pass); background: var(--pass); color: var(--pass-ink); }
+
+/* ---- Findings ---- */
+.caveat { padding-left: 1.25rem; border-left: 2px solid var(--fail); }
+.caveat__label { color: var(--fail-text); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ---- Breakdown + failure bars (pass on fail track). Named .passtrack: .track is used by existing charts. ---- */
+.passtrack { height: 0.875rem; overflow: hidden; border-radius: 2px; background: var(--fail); }
+.passtrack > span { display: block; height: 100%; background: var(--pass); opacity: var(--op, 1); }
+.failstack { display: flex; height: 2.75rem; gap: 2px; }
+.failstack > span { display: flex; align-items: center; min-width: 0; padding-left: 0.625rem; overflow: hidden; color: var(--fail-ink); font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; }
+.failstack > span:nth-child(1) { background: var(--fail-1); }
+.failstack > span:nth-child(2) { background: var(--fail-2); }
+.failstack > span:nth-child(3) { background: var(--fail-3); }
+.failstack > span:nth-child(4) { background: var(--fail-4); }
+
+@media (max-width: 60rem) {
+  .gatelane-grid { overflow-x: auto; --cols: 11rem repeat(5, 7rem); }
+  .gate-detail, .gate-detail__body { grid-template-columns: 1fr; }
+  .board { overflow-x: auto; }
+  .board__row { min-width: 52rem; }
+  .hero-stat { padding-left: 0; border-left: 0; }
+}

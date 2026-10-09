@@ -73,6 +73,8 @@ export const configurationSchema = z.object({
   label: nonEmpty,
   /** For narrow column headers only; charts and tables use `label`. */
   shortLabel: nonEmpty,
+  /** One line under the name in lanes and the leaderboard. */
+  subtitle: nonEmpty,
   description: nonEmpty,
   kind: z.enum(["snyk", "agent", "baseline"]),
   /** The configuration the site is about; drawn in Hot Pink. Exactly one. */
@@ -161,6 +163,7 @@ const countPairSchema = z.object({ attempts: count, passed: count });
 export const baselineSchema = z.object({
   id,
   label: nonEmpty,
+  subtitle: nonEmpty,
   description: nonEmpty,
   runDate: z.iso.date(),
   attempts: count,
@@ -258,7 +261,7 @@ export const benchmarkSchema = z
       z.object({ title: nonEmpty, when: nonEmpty, text: nonEmpty, steps: z.array(nonEmpty).min(1) }),
     ),
     model: z.object({ name: nonEmpty, id: nonEmpty, provider: nonEmpty, claudeCodeVersion: nonEmpty }),
-    budgets: z.object({ timeoutMinutesPerAttempt: count, turns: nonEmpty }),
+    budgets: z.object({ turnsPerUpgrade: count, timeoutMinutesPerAttempt: count, turns: nonEmpty }),
     /** List prices used for estimated (not tool-reported) costs. */
     pricing: z.object({
       inputPerMillion: z.number().positive(),

@@ -1,0 +1,278 @@
+---
+import { benchmark } from "../../data";
+import { formatInteger } from "../../lib/format";
+import { countWord, indexLabel } from "../../lib/words";
+
+/*
+ * The top of the methodology page (2b design): headline and scope, the
+ * three-phase pipeline, the gates in order with the verdict, and the setup.
+ */
+const { summary, scope, methodology, metrics, model, budgets } = benchmark;
+const gates = metrics.filter((m) => m.kind === "gate");
+const hours = budgets.timeoutMinutesPerAttempt / 60;
+const setup = [
+  {
+    key: "Model",
+    value: model.name,
+    text: `All three agents use the same model via ${model.provider}. Claude Code ${model.claudeCodeVersion}.`,
+  },
+  { key: "Budget", value: `${budgets.turnsPerUpgrade} turns · ${hours} h`, text: budgets.turns },
+  {
+    key: "Runs",
+    value: "One per agent",
+    text: "Each upgrade is attempted on its own, in a fresh container, with infrastructure errors excluded from every rate.",
+  },
+];
+---
+
+<header class="container method-hero">
+  <div>
+    <p class="eyebrow accent-pass">Methodology</p>
+    <h1>{countWord(gates.length)} gates. No partial credit.</h1>
+    <p class="summary">{summary}</p>
+  </div>
+  <dl class="scope">
+    {
+      scope.map(({ value, label }) => (
+        <div>
+          <dt class="metric accent-pass">{formatInteger(value)}</dt>
+          <dd>{label}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</header>
+
+<section class="container block" aria-labelledby="pipeline-title">
+  <h2 class="section-title" id="pipeline-title">The pipeline</h2>
+  <ol class="cards">
+    {
+      methodology.map(({ title, when, text }, i) => (
+        <li>
+          <p class="card__kicker metric accent-pass">
+            {indexLabel(i)} · {when}
+          </p>
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<section class="container block" aria-labelledby="gates-title">
+  <h2 class="section-title" id="gates-title">The gates, in order</h2>
+  <ol class="gates">
+    {
+      gates.map((g, i) => (
+        <li>
+          <span class="gates__n metric accent-pass">GATE {i + 1}</span>
+          <strong>{g.label}</strong>
+          <p>{g.description}</p>
+        </li>
+      ))
+    }
+    <li class="gates__verdict">
+      <span class="gates__n metric accent-pass">VERDICT</span>
+      <strong>PASS</strong>
+      <p>All {countWord(gates.length).toLowerCase()} gates clear. A skipped or missing test counts as a regression.</p>
+    </li>
+  </ol>
+</section>
+
+<section class="container block setup" aria-label="Setup">
+  {
+    setup.map(({ key, value, text }) => (
+      <div>
+        <p class="setup__key metric">{key}</p>
+        <p class="setup__value">{value}</p>
+        <p class="setup__text">{text}</p>
+      </div>
+    ))
+  }
+</section>
+
+<style>
+  .method-hero {
+    display: grid;
+    gap: var(--space-6) 4.5rem;
+    padding-top: 4.5rem;
+  }
+
+  h1 {
+    margin-top: 1rem;
+    font-size: clamp(2.6rem, 1.6rem + 4vw, 4.5rem);
+    line-height: 1;
+  }
+
+  .summary {
+    margin-top: 1.5rem;
+    color: var(--ink-soft);
+    font-size: 1.125rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .scope {
+    display: grid;
+    overflow: hidden;
+    align-self: end;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--rule);
+    gap: 1px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scope div {
+    padding: 1.75rem;
+    background: var(--panel);
+  }
+
+  .scope dt {
+    font-size: clamp(1.8rem, 1.4rem + 1.4vw, 2.5rem);
+    font-weight: 500;
+  }
+
+  .scope dd {
+    margin-top: 0.375rem;
+    color: var(--ink-soft);
+    font-size: 0.875rem;
+  }
+
+  .block {
+    padding-top: 5rem;
+  }
+
+  .block > .section-title {
+    margin-bottom: 1.75rem;
+  }
+
+  .cards {
+    display: grid;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--rule);
+    gap: 1px;
+    list-style: none;
+  }
+
+  .cards li {
+    padding: 1.75rem;
+    background: var(--panel);
+  }
+
+  .card__kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .cards h3 {
+    margin-top: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .cards p:last-child {
+    margin-top: 0.5rem;
+    color: var(--ink-soft);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .gates {
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    list-style: none;
+  }
+
+  .gates li {
+    display: grid;
+    gap: 0.5rem 1.5rem;
+    padding: 1.625rem 1.75rem;
+    align-items: baseline;
+  }
+
+  .gates li + li {
+    border-top: 1px solid var(--rule);
+  }
+
+  .gates__n {
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+  }
+
+  .gates strong {
+    color: var(--ink);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .gates p {
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .gates__verdict {
+    background: var(--pass-tint);
+  }
+
+  .setup {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .setup > div {
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .setup__key {
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .setup__value {
+    margin-top: 0.625rem;
+    color: var(--ink);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .setup__text {
+    margin-top: 0.5rem;
+    color: var(--ink-soft);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  @media (min-width: 48rem) {
+    .cards,
+    .setup {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .gates li {
+      grid-template-columns: 7.5rem 18.75rem minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 60rem) {
+    .method-hero {
+      grid-template-columns: 1.2fr 1fr;
+    }
+  }
+</style>

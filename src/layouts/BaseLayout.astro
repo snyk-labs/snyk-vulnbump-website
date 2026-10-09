@@ -1,9 +1,10 @@
 ---
-import PreviewBanner from "../components/site/PreviewBanner.astro";
 import SiteFooter from "../components/site/SiteFooter.astro";
 import SiteHeader from "../components/site/SiteHeader.astro";
 import { benchmark, site } from "../data";
 import "../styles/global.css";
+// The 2b theme overrides global.css, so it must load after it.
+import "../styles/theme-2b.css";
 
 interface Props {
   title?: string;
@@ -23,7 +24,7 @@ const canonicalUrl = new URL(cleanPath, Astro.site);
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="theme-color" content="#030328" />
+    <meta name="theme-color" content="#0b0613" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
@@ -46,7 +47,6 @@ const canonicalUrl = new URL(cleanPath, Astro.site);
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <SiteHeader />
-    {isDraft && <PreviewBanner />}
     <main id="main-content">
       <slot />
     </main>

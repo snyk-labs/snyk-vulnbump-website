@@ -1,259 +1,75 @@
 ---
-import { baselines, benchmark, bump, getMetric, highlighted } from "../../data";
-import { configColors } from "../../lib/colors";
-import { formatInteger, formatPercent, formatRatio } from "../../lib/format";
-import GradientText from "../brand/GradientText.astro";
-import HeroNumeral from "../brand/HeroNumeral.astro";
-import BrandFabric from "../site/BrandFabric.astro";
+import { benchmark, getMetric, highlighted } from "../../data";
+import { formatPercent } from "../../lib/format";
+import { countWord } from "../../lib/words";
 
-const { release, tagline, links, scope, headline, configurations } = benchmark;
+/*
+ * 2b hero: headline and lede on the left; the highlighted agent's PASS rate
+ * as the hero stat on the right, read from the data rather than hard-coded.
+ */
+const { tagline, headline, flowSteps } = benchmark;
 const metric = getMetric(headline.metric);
-const colors = configColors(configurations);
-const value = (c: (typeof configurations)[number]) => c.values[metric.key] ?? 0;
+const value = highlighted.values[metric.key] ?? 0;
+const gates = countWord(flowSteps.length - 1).toLowerCase();
 ---
 
-<section class="hero">
-  <BrandFabric corner="bottom-right" opacity={0.5} />
-
-  <div class="container hero-grid">
-    <div class="copy">
-      <p class="eyebrow">{release.name}</p>
-      <h1>
-        <span>{tagline.lead}</span>
-        <GradientText text={tagline.keyword} id="hero" />
-      </h1>
-      <p class="question">{benchmark.researchQuestion}</p>
-      <p class="summary">{benchmark.summary}</p>
-
-      <div class="button-row">
-        <a class="button" href="/results">Explore the results</a>
-        {
-          links.paper ? (
-            <a class="button secondary" href={links.paper}>Read the paper</a>
-          ) : (
-            <a class="button secondary" href="/methodology">Methodology</a>
-          )
-        }
-      </div>
-
-      <dl class="scope" aria-label="Benchmark scope">
-        {
-          scope.map(({ value: n, label }) => (
-            <div>
-              <dt>{label}</dt>
-              <dd class="metric">{formatInteger(n)}</dd>
-            </div>
-          ))
-        }
-      </dl>
+<section class="hero container" aria-labelledby="hero-title">
+  <div class="copy">
+    <p class="eyebrow accent-pass">Snyk Labs · SCA remediation benchmark</p>
+    <h1 id="hero-title">
+      {tagline.lead}<br /><span class="accent-pass">{tagline.keyword}</span>
+    </h1>
+    <p class="lede">
+      {benchmark.researchQuestion} {highlighted.attempts} real upgrades, {gates} gates, one verdict.
+    </p>
+    <div class="button-row">
+      <a class="button" href="/results">See the results →</a>
+      <a class="button secondary" href="/methodology">How it works</a>
     </div>
+  </div>
 
-    <div class="evidence">
-      <HeroNumeral value={formatPercent(value(highlighted))} id="hero" />
-      <p class="evidence__label">{headline.label}</p>
-      {
-        metric.kind === "verdict" && (
-          <p class="evidence__count metric">
-            {formatRatio(highlighted.passed, highlighted.attempts)} upgrades
-          </p>
-        )
-      }
-
-      <ul class="chips" aria-label="Compared with">
-        {[...baselines].sort((a, b) => value(b) - value(a)).map((c) => (
-          <li>
-            <span class="dot" style={`background: ${colors[c.id]}`} aria-hidden="true" />
-            <span class="chip__value">{formatPercent(value(c))}</span>
-            <span class="chip__label">{c.label}</span>
-            {metric.kind === "verdict" && (
-              <span class="chip__count metric">{formatRatio(c.passed, c.attempts)} upgrades</span>
-            )}
-          </li>
-        ))}
-        <li>
-          <span class="dot swatch--baseline" aria-hidden="true" />
-          <span class="chip__value">{formatPercent(bump.values[metric.key] ?? 0)}</span>
-          <span class="chip__label">{bump.label} (non-agent baseline)</span>
-          {metric.kind === "verdict" && (
-            <span class="chip__count metric">{formatRatio(bump.passed, bump.attempts)} upgrades</span>
-          )}
-        </li>
-      </ul>
-      <p class="caption metric">
-        {metric.label} · {headline.caption} · Dataset {release.datasetVersion}
-      </p>
-    </div>
+  <div class="hero-stat">
+    <p class="hero-stat__value">{formatPercent(value)}</p>
+    <p class="hero-stat__label">{headline.label}</p>
+    <p class="hero-stat__meta">{headline.caption}</p>
   </div>
 </section>
 
 <style>
   .hero {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    padding-block: var(--space-7) clamp(8rem, 16vw, 13rem);
+    display: grid;
+    gap: var(--space-6) 4rem;
+    padding-block: 5rem 3rem;
+    align-items: end;
   }
 
-  .hero-grid {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    gap: var(--space-7);
-  }
-
-  .copy {
-    display: grid;
-    max-width: 38rem;
-    gap: var(--space-4);
-    align-content: center;
+  .eyebrow {
+    margin-bottom: 1.5rem;
   }
 
   h1 {
-    margin-top: var(--space-2);
-    font-size: clamp(3rem, 1.4rem + 6vw, 6.4rem);
-    letter-spacing: -0.045em;
-    line-height: 0.98;
+    font-size: clamp(3.2rem, 1.6rem + 6vw, 6.25rem);
+    line-height: 0.95;
   }
 
-  h1 > span {
-    display: block;
-  }
-
-  .question {
-    margin-top: var(--space-2);
-    color: #ffffff;
-    font-size: var(--step-1);
-    font-weight: 500;
-    line-height: 1.35;
-    text-wrap: balance;
-  }
-
-  .summary {
-    max-width: 34rem;
-    color: var(--ink-soft);
+  .lede {
+    max-width: 37.5rem;
+    margin-top: 1.75rem;
+    font-size: 1.1875rem;
+    line-height: 1.5;
   }
 
   .button-row {
-    margin-top: var(--space-2);
+    margin-top: 2rem;
   }
 
-  /* Metadata label rows: mono label over value. */
-  .scope {
-    display: grid;
-    margin-top: var(--space-4);
-    border-top: 1px solid var(--rule);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .hero-stat__value {
+    font-variant-numeric: tabular-nums;
   }
 
-  .scope div {
-    padding: var(--space-3) var(--space-3) 0 0;
-  }
-
-  dt {
-    color: var(--ink-faint);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  dd {
-    margin-top: 0.2rem;
-    color: #ffffff;
-    font-size: var(--step-1);
-    font-variant-numeric: normal;
-  }
-
-  .evidence {
-    display: grid;
-    gap: var(--space-2);
-    align-content: center;
-  }
-
-  .evidence__label {
-    max-width: 22ch;
-    margin-top: var(--space-3);
-    color: #ffffff;
-    font-size: var(--step-2);
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
-  }
-
-  .evidence__count {
-    color: var(--ink-faint);
-    font-size: 0.78rem;
-  }
-
-  /* Stat-chip row: dot + number + label, after the Snyk data layouts. */
-  .chips {
-    display: grid;
-    padding: 0;
-    margin: var(--space-5) 0 0;
-    border-top: 1px solid var(--rule);
-    list-style: none;
-  }
-
-  .chips li {
-    display: grid;
-    padding-block: var(--space-3);
-    border-bottom: 1px solid var(--rule);
-    gap: 0.1rem 0.75rem;
-    grid-template-columns: auto auto 1fr;
-    align-items: baseline;
-  }
-
-  .dot {
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 50%;
-    transform: translateY(-0.1rem);
-  }
-
-  .chip__value {
-    color: #ffffff;
-    font-size: var(--step-2);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
-
-  .chip__label {
-    color: var(--ink-soft);
-    font-size: var(--step--1);
-    line-height: 1.35;
-  }
-
-  .chip__count {
-    grid-column: 3;
-    color: var(--ink-faint);
-    font-size: 0.7rem;
-  }
-
-  .caption {
-    margin-top: var(--space-2);
-    color: var(--ink-faint);
-    font-size: 0.68rem;
-  }
-
-  @media (min-width: 40rem) {
-    .scope {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 64rem) {
+  @media (min-width: 60rem) {
     .hero {
-      padding-top: var(--space-8);
-    }
-
-    .hero-grid {
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-      align-items: center;
-    }
-
-    .evidence {
-      padding-left: var(--space-6);
-      border-left: 1px solid var(--rule);
+      grid-template-columns: 1.5fr 1fr;
     }
   }
 </style>

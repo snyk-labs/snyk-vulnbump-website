@@ -131,6 +131,7 @@
     "claudeCodeVersion": "2.1.289"
   },
   "budgets": {
+    "turnsPerUpgrade": 110,
     "timeoutMinutesPerAttempt": 360,
     "turns": "All three agents use the same model and 110 agent turns per upgrade."
   },
@@ -366,6 +367,7 @@
       "id": "claude-code",
       "label": "Claude Code unaided",
       "shortLabel": "CC unaided",
+      "subtitle": "No target, Snyk blocked",
       "description": "Claude Code 2.1.289 given the same prompt without the target version (\"Upgrade X to fix these vulnerabilities:\") and no Snyk access, so it must find a fixed version itself, for example from OSV.",
       "kind": "agent",
       "highlight": false,
@@ -694,6 +696,7 @@
       "id": "claude-code-snyk",
       "label": "Claude Code + Snyk scan",
       "shortLabel": "CC + Snyk scan",
+      "subtitle": "Given Snyk target + CLI",
       "description": "Claude Code 2.1.289 prompted with the upgrade's \"Upgrade X to Y to fix\" block from the baseline Snyk report, which names the target version, and the project's test command. It may run snyk test.",
       "kind": "agent",
       "highlight": false,
@@ -1037,6 +1040,7 @@
       "id": "evo-remediation-agent",
       "label": "Evo Remediation Agent",
       "shortLabel": "Evo agent",
+      "subtitle": "Snyk agentic remediation",
       "description": "Snyk's agentic remediation engine (snyk fix --agentic), run once per upgrade with the ids of the vulnerabilities it fixes. It leverages Snyk intelligence, which evolved from Snyk's deterministic SCA fix engine, runs its own scan, the build and tests, and repairs errors before finishing.",
       "kind": "snyk",
       "highlight": true,
@@ -2071,6 +2075,7 @@
   "baseline": {
     "id": "package-manager-bump",
     "label": "Package manager bump",
+    "subtitle": "Snyk's version, no agent",
     "description": "The non-agent baseline: applies Snyk's recommended upgrade and nothing else. It uses no model, edits no code or tests, and never tries another version.",
     "runDate": "2026-10-08",
     "attempts": 307,

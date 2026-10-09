@@ -1,10 +1,8 @@
 ---
-import GradientText from "../brand/GradientText.astro";
-
 interface Props {
   eyebrow: string;
   title: string;
-  /** Optional Brand-Gradient keyword set on its own line after the title. */
+  /** Optional second line of the title, set in the PASS accent. */
   keyword?: string;
   description: string;
 }
@@ -15,10 +13,10 @@ const { eyebrow, title, keyword, description } = Astro.props;
 <header class="page-hero">
   <div class="container page-hero__inner">
     <div class="copy">
-      <p class="eyebrow">{eyebrow}</p>
+      <p class="eyebrow accent-pass">{eyebrow}</p>
       <h1>
         {title}
-        {keyword && <GradientText text={keyword} id="page-hero" />}
+        {keyword && <span class="keyword accent-pass">{keyword}</span>}
       </h1>
       <p class="lede">{description}</p>
       <div class="actions">
@@ -33,24 +31,34 @@ const { eyebrow, title, keyword, description } = Astro.props;
 
 <style>
   .page-hero {
-    padding-block: var(--space-7) var(--space-6);
-    border-bottom: 1px solid var(--rule);
+    padding-block: 4.5rem 0;
   }
 
   .page-hero__inner {
     display: grid;
-    gap: var(--space-6);
+    gap: var(--space-6) 4.5rem;
   }
 
   .copy {
     display: grid;
-    gap: var(--space-4);
+    gap: 1.25rem;
     align-content: start;
   }
 
   h1 {
-    max-width: 16ch;
-    font-size: clamp(2.4rem, 1.6rem + 3.6vw, 4.6rem);
+    max-width: 18ch;
+    font-size: clamp(2.6rem, 1.6rem + 4vw, 4.5rem);
+    line-height: 1;
+  }
+
+  .keyword {
+    display: block;
+  }
+
+  .lede {
+    max-width: 42.5rem;
+    font-size: 1.125rem;
+    line-height: 1.55;
   }
 
   .actions {
@@ -67,7 +75,7 @@ const { eyebrow, title, keyword, description } = Astro.props;
 
   @media (min-width: 60rem) {
     .page-hero__inner {
-      grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.6fr);
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
       align-items: end;
     }
   }

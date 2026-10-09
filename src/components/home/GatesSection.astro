@@ -1,104 +1,24 @@
 ---
-import { benchmark } from "../../data";
-import { countWord, indexLabel } from "../../lib/words";
+import { benchmark, funnelLanes, gateDetails } from "../../data";
 import { GateFunnel } from "../charts/GateFunnel";
 
-const { configurations, flowSteps, release, baseline } = benchmark;
-const gates = flowSteps.slice(1);
-const series = [
-  { id: baseline.id, label: baseline.label, highlight: false, baseline: true, flow: baseline.flow },
-  ...configurations.map(({ id, label, highlight, flow }) => ({ id, label, highlight, flow })),
-];
+/* The hero chart: every upgrade narrowing through the four gates, per harness. */
+const { flowSteps, release } = benchmark;
 ---
 
-<section class="section" id="gates" aria-labelledby="gates-title">
-  <div class="container">
-    <div class="head">
-      <div class="section-heading">
-        <p class="eyebrow">The shipping gates</p>
-        <h2 id="gates-title">
-          Every upgrade has to clear {countWord(gates.length).toLowerCase()} gates.
-        </h2>
-        <p class="lede">
-          Each line follows one harness's upgrades through the gates in order.
-          The steepest drop is at the Snyk rescan, where Claude Code leaves the
-          vulnerability in place. The dashed line applies only Snyk's recommended
-          version, with no agent.
-        </p>
-      </div>
-
-      <ol class="gate-list">
-        {
-          gates.map((gate, i) => (
-            <li>
-              <span class="metric">{indexLabel(i)}</span>
-              {gate.label}
-            </li>
-          ))
-        }
-      </ol>
-    </div>
-
-    <GateFunnel
-      client:visible
-      series={series}
-      steps={flowSteps}
-      datasetVersion={release.datasetVersion}
-    />
-  </div>
+<section class="container gates" id="gates" aria-labelledby="gates-title">
+  <h2 id="gates-title" class="visually-hidden">Upgrades passing each gate</h2>
+  <GateFunnel
+    client:visible
+    lanes={funnelLanes()}
+    steps={flowSteps}
+    gates={gateDetails}
+    datasetVersion={release.datasetVersion}
+  />
 </section>
 
 <style>
-  .head {
-    display: grid;
-    gap: var(--space-4);
-    margin-bottom: var(--space-5);
-  }
-
-  .section-heading {
-    margin-bottom: 0;
-  }
-
-  .gate-list {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 0;
-    margin: 0;
-    gap: var(--space-2);
-    list-style: none;
-  }
-
-  .gate-list li {
-    display: inline-flex;
-    padding: 0.4rem 0.9rem 0.4rem 0.45rem;
-    border: 1px solid var(--rule-strong);
-    border-radius: var(--radius-pill);
-    color: #ffffff;
-    font-size: var(--step--1);
-    gap: 0.55rem;
-    align-items: center;
-  }
-
-  .gate-list .metric {
-    display: inline-grid;
-    width: 1.7rem;
-    height: 1.7rem;
-    border-radius: 50%;
-    background: #ffffff;
-    color: #030328;
-    font-size: 0.68rem;
-    place-items: center;
-  }
-
-  @media (min-width: 64rem) {
-    .head {
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: end;
-    }
-
-    .gate-list {
-      flex-direction: column;
-      align-items: stretch;
-    }
+  .gates {
+    scroll-margin-top: var(--space-4);
   }
 </style>

@@ -1,0 +1,44 @@
+---
+import { benchmark, bump } from "../../data";
+import { displayOrder } from "../../lib/colors";
+import { countWord } from "../../lib/words";
+import { Leaderboard } from "../charts/Leaderboard";
+
+/* Same model, three agents: a sortable, filterable table, rates from the data. */
+const { configurations, ecosystems } = benchmark;
+const rates = (v: Record<string, number>) => ({
+  pass: v.allGates ?? 0,
+  fixed: v.instancesFixed ?? 0,
+  deps: v.depsResolve ?? 0,
+  build: v.cleanBuild ?? 0,
+  tests: v.testsPass ?? 0,
+});
+const agents = displayOrder(configurations).map((c) => ({
+  id: c.id,
+  label: c.label,
+  subtitle: c.subtitle,
+  highlight: c.highlight,
+  attempts: c.attempts,
+  overall: rates(c.values),
+  ecosystems: c.ecosystems,
+}));
+const baseline = { id: bump.id, label: bump.label, subtitle: bump.subtitle, attempts: bump.attempts, overall: rates(bump.values) };
+---
+
+<section class="container board-section" aria-labelledby="leaderboard-title">
+  <Leaderboard
+    client:visible
+    agents={agents}
+    baseline={baseline}
+    ecosystems={ecosystems}
+    eyebrow="Leaderboard"
+    title={`Same model, ${countWord(agents.length).toLowerCase()} agents`}
+    titleId="leaderboard-title"
+  />
+</section>
+
+<style>
+  .board-section {
+    padding-top: 4rem;
+  }
+</style>

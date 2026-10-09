@@ -1,114 +1,67 @@
 ---
-import { benchmark, site } from "../../data";
-import { formatDate } from "../../lib/format";
-import SnykLogo from "./SnykLogo.astro";
+import { benchmark } from "../../data";
 
-const { release, links } = benchmark;
+const { release, model } = benchmark;
+// Pages outside the primary nav stay reachable here.
 const footerLinks = [
-  { label: "Results", href: "/results" },
-  { label: "Methodology", href: "/methodology" },
   { label: "Data", href: "/data" },
   { label: "About", href: "/about" },
-  { label: "GitHub", href: links.github },
   { label: "Privacy", href: "https://snyk.io/policies/privacy/" },
   { label: "Terms", href: "https://snyk.io/policies/terms-of-service/" },
-].filter((link): link is { label: string; href: string } => Boolean(link.href));
+];
 ---
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <div class="lockup">
-      <SnykLogo />
-      <p>
-        {site.name} is a Snyk benchmark initiative. Research artifacts are
-        provided under Apache 2.0. © {new Date().getFullYear()} Snyk Limited.
-      </p>
+    <div class="line">
+      <p>All agents run {model.name} · Run {release.runDate} · Snyk Labs</p>
+      <p class="metric">Dataset {release.datasetVersion}</p>
     </div>
-
-    <div class="meta">
-      <nav aria-label="Footer">
-        <ul>
-          {footerLinks.map(({ label, href }) => <li><a href={href}>{label}</a></li>)}
-        </ul>
-      </nav>
-      <p class="metric">
-        {release.name}
-        <span aria-hidden="true">|</span>
-        {release.publishedAt ? formatDate(release.publishedAt) : "Draft"}
-        <span aria-hidden="true">|</span>
-        Dataset {release.datasetVersion}
-      </p>
-    </div>
+    <nav aria-label="Footer">
+      <ul>
+        {footerLinks.map(({ label, href }) => <li><a href={href}>{label}</a></li>)}
+      </ul>
+    </nav>
   </div>
 </footer>
 
 <style>
   .site-footer {
+    margin-top: 5rem;
     border-top: 1px solid var(--rule);
-    background: var(--midnight);
+    background: var(--paper);
+    color: var(--ink-faint);
+    font-size: 0.8125rem;
   }
 
   .footer-inner {
     display: grid;
-    padding-block: var(--space-6);
-    gap: var(--space-5);
-  }
-
-  .lockup {
-    display: grid;
+    padding-block: 3rem;
     gap: var(--space-3);
-    justify-items: start;
   }
 
-  .lockup p {
-    max-width: 30rem;
-    color: var(--ink-faint);
-    font-size: var(--step--1);
-  }
-
-  .meta {
-    display: grid;
-    gap: var(--space-3);
-    align-content: end;
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-5);
   }
 
   ul {
     display: flex;
     flex-wrap: wrap;
     padding: 0;
-    gap: 0.4rem 1.2rem;
+    margin: 0;
+    gap: 0.4rem 1.25rem;
     list-style: none;
   }
 
   a {
-    color: var(--ink-soft);
-    font-family: var(--font-mono);
-    font-size: 0.74rem;
-    letter-spacing: 0.08em;
+    color: var(--ink-faint);
     text-decoration: none;
-    text-transform: uppercase;
   }
 
   a:hover {
-    color: #ffffff;
-  }
-
-  .meta p {
-    display: flex;
-    flex-wrap: wrap;
-    color: var(--ink-faint);
-    font-size: 0.72rem;
-    gap: 0.6rem;
-  }
-
-  @media (min-width: 56rem) {
-    .footer-inner {
-      grid-template-columns: 1fr auto;
-      align-items: end;
-    }
-
-    .meta {
-      justify-items: end;
-    }
+    color: var(--ink);
   }
 </style>

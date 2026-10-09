@@ -1,0 +1,68 @@
+---
+import { benchmark } from "../../data";
+
+/* Three headline numbers under the funnel, from `highlights`. */
+const { highlights } = benchmark;
+---
+
+<section class="container highlights" aria-label="At a glance">
+  <dl>
+    {
+      highlights.map(({ value, label, tone, href }) => (
+        <div class="item">
+          <dt class:list={["value", { "value--strong": tone === "strong" }]}>{value}</dt>
+          <dd>
+            {label} <a class="more" href={href} aria-label={`More on: ${label}`}>→</a>
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>
+
+<style>
+  .highlights {
+    padding-block: 4.5rem 1.5rem;
+  }
+
+  dl {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  .item {
+    padding-top: 1.375rem;
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .value {
+    color: var(--ink);
+    font-size: 3rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  .value--strong {
+    color: var(--pass-text);
+  }
+
+  dd {
+    margin-top: 0.625rem;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .more {
+    color: var(--pass-text);
+    text-decoration: none;
+  }
+
+  @media (min-width: 48rem) {
+    dl {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -2,95 +2,98 @@
 @import "@fontsource-variable/geist-mono";
 
 /*
- * VulnBump design tokens — Snyk 2026 brand, Family A (Midnight + fabric).
- *
- * Dark-first by brand rule: there is no white canvas and no light mode.
- * Only the five locked brand colours, Midnight, and white/black appear here;
- * every tint is an alpha of one of them.
+ * VulnBump design tokens - "2b" theme: Gatehouse, Snyk purple + orange.
+ * Drop-in replacement for src/styles/tokens.css. Every existing token name is
+ * kept, so charts.css / global.css / components keep working. New tokens are
+ * under "Gate semantics". Solid fills only: no gradients.
  */
 
 :root {
   color-scheme: dark;
 
-  /* Locked brand palette */
-  --midnight: #030328;
-  --plum: #2b0250;
-  --purple: #6f00dd;
-  --pink: #ff00ff;
-  --ember: #f3552e;
-  --amber: #fe9104;
+  /* Palette */
+  --midnight: #0b0613;
+  --plum: #14091f;
+  --purple: #8f3ce8;
+  --purple-text: #c481f3;
+  --pink: #c481f3;           /* legacy name: now the lavender accent (focus, rules, links) */
+  --ember: #ff8904;
+  --amber: #f9c748;
   --white: #ffffff;
 
-  /* Brand Gradient: shapes/fills keep a sliver of plum; text never does. */
-  --gradient-fill: linear-gradient(
-    90deg,
-    #2b0250 0%,
-    #6f00dd 6%,
-    #ff00ff 30%,
-    #f3552e 66%,
-    #fe9104 100%
-  );
+  /* Gate semantics: PASS = purple, FAIL = orange */
+  --pass: #8f3ce8;
+  --pass-text: #c481f3;
+  --pass-ink: #ffffff;
+  --pass-tint: rgba(143, 60, 232, 0.12);
+  --fail: #ff8904;
+  --fail-text: #ff8904;
+  --fail-ink: #0b0613;
+  --fail-dim: rgba(255, 137, 4, 0.38);
+  /* Fail sub-segments, in gate order: deps, rescan, build, tests */
+  --fail-1: #ff8904;
+  --fail-2: #f9c748;
+  --fail-3: #ffb866;
+  --fail-4: #ffddb0;
+  /* Agent opacity steps for the PASS colour (highlighted agent = 1) */
+  --pass-op-1: 1;
+  --pass-op-2: 0.62;
+  --pass-op-3: 0.34;
+
+  /* Brand gradient removed in this theme; kept as a solid so old references don't break */
+  --gradient-fill: #8f3ce8;
 
   /* Surfaces */
-  --paper: #030328;
-  --panel: rgba(255, 255, 255, 0.03);
-  --panel-strong: rgba(111, 0, 221, 0.08);
+  --paper: #0b0613;
+  --panel: #14091f;
+  --panel-strong: rgba(143, 60, 232, 0.12);
   --panel-hover: rgba(255, 255, 255, 0.06);
 
   /* Text */
   --ink: #ffffff;
-  --ink-soft: rgba(255, 255, 255, 0.72);
-  --ink-faint: rgba(255, 255, 255, 0.58);
-  --inverse-text: #030328;
+  --ink-soft: #c9bfd8;
+  --ink-faint: #a294b8;
+  --inverse-text: #0b0613;
 
   /* Lines */
-  --rule: rgba(255, 255, 255, 0.12);
-  --rule-strong: rgba(255, 255, 255, 0.32);
+  --rule: rgba(255, 255, 255, 0.1);
+  --rule-strong: rgba(255, 255, 255, 0.2);
 
   /* Interactive */
   --action-link: #ffffff;
-  --accent: #ff00ff;
-  --focus-ring: 0 0 0 2px #030328, 0 0 0 4px #ff00ff;
+  --accent: #c481f3;
+  --focus-ring: 0 0 0 2px #0b0613, 0 0 0 4px #c481f3;
 
-  /*
-   * Chart series, fixed order, assigned to entities (never by rank).
-   * Checked on Midnight: CVD and normal-vision separation pass. Purple is
-   * 2.6:1 against Midnight, so every chart keeps direct labels, surface gaps,
-   * and an exact-value table. Brand-locked hues mean the lightness-band check
-   * cannot pass; that is the trade-off for staying on palette.
-   */
-  --series-1: #ff00ff;
-  --series-2: #fe9104;
-  --series-3: #6f00dd;
-  --series-4: #f3552e;
-  --on-series-1: #030328;
-  --on-series-2: #030328;
-  --on-series-3: #ffffff;
-  --on-series-4: #030328;
-  /* The highlighted configuration is series 1; everything else is muted. */
-  --series-highlight: #ff00ff;
-  --series-muted: rgba(255, 255, 255, 0.32);
-  --series-muted-strong: rgba(255, 255, 255, 0.62);
-  /* The non-agent baseline: an outline, not a fill. */
+  /* Chart series: highlighted agent = purple, others = purple at lower opacity (fixed per entity) */
+  --series-1: #8f3ce8;
+  --series-2: #ff8904;
+  --series-3: #c481f3;
+  --series-4: #f9c748;
+  --on-series-1: #ffffff;
+  --on-series-2: #0b0613;
+  --on-series-3: #0b0613;
+  --on-series-4: #0b0613;
+  --series-highlight: #8f3ce8;
+  --series-muted: rgba(143, 60, 232, 0.34);
+  --series-muted-strong: rgba(143, 60, 232, 0.62);
   --series-baseline: rgba(255, 255, 255, 0.7);
 
-  /* Sequential heatmap: one hue (Purple), five discrete bands. */
+  /* Sequential heatmap: purple, five bands */
   --heatmap-0: rgba(255, 255, 255, 0.04);
-  --heatmap-1: rgba(111, 0, 221, 0.22);
-  --heatmap-2: rgba(111, 0, 221, 0.42);
-  --heatmap-3: rgba(111, 0, 221, 0.66);
-  --heatmap-4: #6f00dd;
+  --heatmap-1: rgba(143, 60, 232, 0.22);
+  --heatmap-2: rgba(143, 60, 232, 0.42);
+  --heatmap-3: rgba(143, 60, 232, 0.66);
+  --heatmap-4: #8f3ce8;
   --heatmap-text: #ffffff;
 
   /* Chart chrome */
   --chart-grid: rgba(255, 255, 255, 0.08);
-  --chart-axis: rgba(255, 255, 255, 0.32);
-  --chart-surface: #030328;
+  --chart-axis: rgba(255, 255, 255, 0.28);
+  --chart-surface: #0b0613;
 
-  /* Status (preview banner only) */
-  --warning: #fe9104;
+  --warning: #ff8904;
 
-  /* Type: Geist for titles and body, Geist Mono for labels and controls. */
+  /* Type: unchanged (Geist / Geist Mono) */
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --font-weight-control: 500;
@@ -114,6 +117,6 @@
 
   --content: 76rem;
   --reading: 42rem;
-  --radius: 0.75rem;
+  --radius: 0.875rem;
   --radius-pill: 999px;
 }

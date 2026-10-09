@@ -2,7 +2,7 @@
 import ProductionComparison from "../components/methodology/ProductionComparison.astro";
 import RelatedWorkTable from "../components/methodology/RelatedWorkTable.astro";
 import SelectionFunnel from "../components/methodology/SelectionFunnel.astro";
-import PageHero from "../components/site/PageHero.astro";
+import MethodOverview from "../components/methodology/MethodOverview.astro";
 import { benchmark, bump, ecosystemLabel, highlighted, site } from "../data";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { formatInteger } from "../lib/format";
@@ -11,7 +11,6 @@ const {
   release,
   configurations,
   metrics,
-  methodology,
   model,
   budgets,
   pricing,
@@ -46,23 +45,12 @@ const paperDate = new Date(`${paper.date}T00:00:00Z`).toLocaleDateString("en-GB"
   title="Methodology"
   description={`How ${release.name} chose its repositories, runs each upgrade, and verifies it through four gates.`}
 >
-  <PageHero
-    eyebrow={`${release.name} · Methodology`}
-    title="How every bump"
-    keyword="gets judged."
-    description={`${benchmark.studyLabel}. The definitions and limitations here apply to every chart on the site, and follow the VulnBump paper.`}
-  >
-    <Fragment slot="aside">
-      <p class="eyebrow">Run</p>
-      <p class="metric">{model.name} · {model.provider}</p>
-      <p class="metric">Claude Code {model.claudeCodeVersion}</p>
-      <p class="metric">Dataset {release.datasetVersion}</p>
-    </Fragment>
-  </PageHero>
+  <MethodOverview />
 
-  <section class="section">
+  <section class="section method-detail" aria-labelledby="detail-title">
     <div class="container prose reading-width">
-      <h2>Research question</h2>
+      <p class="eyebrow">The full method</p>
+      <h2 id="detail-title" class="detail-title">Research question</h2>
       <p class="lede">{benchmark.researchQuestion}</p>
       <p>
         Software composition analysis tools report far more vulnerable
@@ -231,21 +219,6 @@ Issues to fix by upgrading:
         scored on its own (single-upgrade mode), so one upgrade's failure cannot
         affect another.
       </p>
-
-      <h2>Pipeline</h2>
-      <ol class="phases">
-        {
-          methodology.map(({ title, when, text, steps }) => (
-            <li>
-              <strong>{title}</strong> <span class="metric when">{when}</span>
-              <p>{text}</p>
-              <ul>
-                {steps.map((step) => <li>{step}</li>)}
-              </ul>
-            </li>
-          ))
-        }
-      </ol>
 
       <h2>Harnesses</h2>
       <h3>The package manager bump</h3>
@@ -591,6 +564,15 @@ Issues to fix by upgrading:
 </BaseLayout>
 
 <style>
+  .method-detail {
+    margin-top: 5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .prose .detail-title {
+    margin-top: 0.75rem;
+  }
+
   .container.wide {
     margin-block: var(--space-5) var(--space-6);
   }

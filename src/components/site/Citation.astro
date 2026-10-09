@@ -1,0 +1,93 @@
+---
+import { benchmark } from "../../data";
+
+/* Preferred citation for the paper, with a copy-to-clipboard button. */
+const { citation } = benchmark;
+const bibtex = citation
+  ? [
+      `@misc{${citation.bibtexKey},`,
+      `  author = {${citation.authors.join(" and ")}},`,
+      `  title = {${citation.title}},`,
+      `  howpublished = {Snyk},`,
+      `  year = {${citation.year}}${citation.url ? "," : ""}`,
+      ...(citation.url ? [`  url = {${citation.url}}`] : []),
+      "}",
+    ].join("\n")
+  : null;
+---
+
+{
+  bibtex ? (
+    <div class="citation panel-card" data-bibtex-citation>
+      <p class="eyebrow">Preferred citation</p>
+      <pre><code>{bibtex}</code></pre>
+      <div class="citation-actions">
+        <button class="button secondary" type="button" data-copy-bibtex>
+          Copy BibTeX
+        </button>
+        <span data-citation-status aria-live="polite" />
+      </div>
+    </div>
+  ) : (
+    <p class="pending metric">Citation published alongside the paper.</p>
+  )
+}
+
+<style>
+  .citation {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  pre {
+    margin: var(--space-3) 0;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .citation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  [data-citation-status],
+  .pending {
+    color: var(--ink-faint);
+    font-size: 0.74rem;
+  }
+</style>
+
+<script>
+  let resetTimer: number | undefined;
+
+  document.querySelectorAll<HTMLButtonElement>("[data-copy-bibtex]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const source = button.closest<HTMLElement>("[data-bibtex-citation]");
+      const text = source?.querySelector("code")?.textContent;
+      const status = source?.querySelector<HTMLElement>("[data-citation-status]");
+      const fail = () => {
+        if (status) status.textContent = "Select and copy the BibTeX entry manually.";
+      };
+
+      window.clearTimeout(resetTimer);
+      if (!text || !navigator.clipboard?.writeText) return fail();
+
+      try {
+        await navigator.clipboard.writeText(text);
+        if (status) {
+          status.textContent = "Copied";
+          resetTimer = window.setTimeout(() => {
+            if (status.textContent === "Copied") status.textContent = "";
+          }, 3_000);
+        }
+      } catch {
+        fail();
+      }
+    });
+  });
+</script>

@@ -1,4 +1,5 @@
 import raw from "./benchmark.json";
+import { displayOrder, passOpacity } from "../lib/colors";
 import { benchmarkSchema, type Configuration, type Metric } from "./schema";
 
 /** Parsed at build time; an invalid dataset fails `astro build`. */
@@ -27,6 +28,38 @@ export function ecosystemLabel(id: string): string {
   return benchmark.ecosystems.find((e) => e.id === id)?.label ?? id;
 }
 
+/**
+ * Lanes for the gate funnel, in display order: the highlighted agent, the
+ * other agents from strongest to weakest, then the non-agent baseline.
+ */
+export function funnelLanes() {
+  const op = passOpacity(benchmark.configurations);
+  return [
+    ...displayOrder(benchmark.configurations).map((c) => ({
+      id: c.id,
+      label: c.label,
+      subtitle: c.subtitle,
+      highlight: c.highlight,
+      flow: c.flow,
+      op: op[c.id]!,
+    })),
+    {
+      id: bump.id,
+      label: bump.label,
+      subtitle: bump.subtitle,
+      highlight: false,
+      baseline: true,
+      flow: bump.flow,
+      op: "1",
+    },
+  ];
+}
+
+/** Title and description of each gate, in order, for the funnel's detail row. */
+export const gateDetails = benchmark.metrics
+  .filter((m) => m.kind === "gate")
+  .map((m) => ({ label: m.label, description: m.description }));
+
 export function configById(id: string): Configuration {
   const config = benchmark.configurations.find((c) => c.id === id);
   if (!config) throw new Error(`Unknown configuration "${id}"`);
@@ -53,10 +86,9 @@ export const site = {
 } as const;
 
 export const navLinks: { label: string; href: string; external?: boolean }[] = [
+  { label: "Home", href: "/" },
   { label: "Results", href: "/results" },
   { label: "Methodology", href: "/methodology" },
-  { label: "Data", href: "/data" },
-  { label: "About", href: "/about" },
   ...(benchmark.links.github
     ? [{ label: "GitHub", href: benchmark.links.github, external: true }]
     : []),

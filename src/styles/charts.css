@@ -52,7 +52,7 @@
 
 .chart__segmented button[aria-pressed="true"] {
   background: #ffffff;
-  color: #030328;
+  color: var(--inverse-text);
 }
 
 .chart__hint {
@@ -280,72 +280,6 @@
   text-align: right;
 }
 
-/* Shipping gates (funnel) */
-
-.gates__stages {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 0;
-  margin: 0;
-  gap: 0.3rem 1rem;
-  color: var(--ink-soft);
-  font-size: var(--step--1);
-  list-style: none;
-}
-
-.gates__stages .metric {
-  color: var(--ink-faint);
-  font-size: 0.72rem;
-}
-
-.gates__keys {
-  display: grid;
-  padding: 0;
-  margin: 0;
-  gap: 0.35rem;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  list-style: none;
-}
-
-.gates__keys button {
-  display: grid;
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: var(--step--1);
-  gap: 0.15rem 0.6rem;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  text-align: left;
-  cursor: pointer;
-}
-
-.gates__keys button:hover,
-.gates__keys button[aria-pressed="true"] {
-  border-color: var(--rule-strong);
-  background: var(--panel-hover);
-  color: #ffffff;
-}
-
-.gates__keys .metric {
-  color: #ffffff;
-}
-
-.gates__key-line {
-  width: 1.1rem;
-  height: 2px;
-  border-radius: 1px;
-}
-
-.gates__key-line--baseline {
-  height: 0;
-  border-top: 2px dashed;
-  border-radius: 0;
-}
-
 /* The non-agent baseline in bar charts: an outline, never a fill. */
 .bar--baseline {
   border: 1px dashed var(--series-baseline);
@@ -355,6 +289,112 @@
 .swatch--baseline {
   border: 1px dashed var(--series-baseline);
   background: transparent;
+}
+
+/* Gate funnel lane grid (2b): additions to theme-2b.css */
+
+/*
+ * Positioned so the visually-hidden labels inside (position: absolute) are
+ * clipped by the horizontal scroll on narrow screens instead of widening the page.
+ */
+.gatelane-grid,
+.board {
+  position: relative;
+}
+
+.gatelane-head__start {
+  padding: 1.1rem 1rem;
+  border-left: 1px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.gatelane-head__start small {
+  display: block;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gatelane-head button > span,
+.gatelane-head__start > span {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.gatelane-head button:hover {
+  color: var(--ink);
+}
+
+/*
+ * Lighter agents take a solid tint of --pass mixed into the panel, rather than
+ * the theme's opacity, so the counts inside stay legible and the orange track
+ * behind a bar never shows through it.
+ */
+.gatelane .gatelane__pass,
+.explorer__bars .passtrack > span,
+.explorer__legend .explorer__swatch {
+  background: color-mix(in srgb, var(--pass) calc(var(--op, 1) * 100%), var(--panel));
+  opacity: 1;
+}
+
+.explorer__legend .explorer__swatch--fail {
+  background: var(--fail);
+}
+
+/* The non-agent baseline: an outline, never a fill. */
+.gatelane.gatelane--baseline .gatelane__pass {
+  border: 1px dashed var(--pass-text);
+  background: transparent;
+  color: var(--pass-text);
+  opacity: 1;
+}
+
+.gatelane--baseline .gatelane__drop {
+  opacity: 0.7;
+}
+
+.gate-detail .gate-detail__body {
+  grid-template-columns: 1.2fr repeat(var(--detail-cols, 3), minmax(0, 1fr));
+}
+
+.gate-detail__title {
+  color: var(--ink);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.gate-detail__desc {
+  margin-top: 0.375rem;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.gate-detail__name {
+  color: var(--ink-faint);
+  font-size: 0.8125rem;
+}
+
+.gate-detail__note {
+  margin-top: 0.125rem;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 60rem) {
+  .gate-detail .gate-detail__body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gate-detail .gate-detail__body > :first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Outcome stack (100% stacked bars) */
@@ -480,56 +520,190 @@
   }
 }
 
-/* Vulnerability breakdown (grouped bars) */
+/* Explorer (2b): per-vulnerability buckets, pass on fail track */
 
-.breakdown__groups {
-  display: grid;
-  gap: var(--space-4) var(--space-6);
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+.explorer__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  justify-content: space-between;
 }
 
-.breakdown__group {
-  display: grid;
-  gap: 0.4rem;
+.explorer__note {
+  color: var(--ink-faint);
+  font-size: 0.875rem;
 }
 
-.breakdown__label {
-  color: #ffffff;
-  font-size: var(--step--1);
-  font-weight: 600;
-}
-
-.breakdown__bars {
-  display: grid;
+.explorer__legend {
+  display: flex;
+  flex-wrap: wrap;
   padding: 0;
   margin: 0;
-  gap: 3px;
+  gap: 0.5rem 1.5rem;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
   list-style: none;
 }
 
-.breakdown__bars li {
-  border-radius: 0.2rem;
-}
-
-.breakdown__bars li:focus-visible {
-  box-shadow: var(--focus-ring);
-}
-
-.breakdown__track {
-  display: flex;
-  height: 1rem;
-  align-items: center;
+.explorer__legend li {
+  display: inline-flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
-.breakdown__bar {
-  display: block;
-  min-width: 2px;
-  height: 100%;
-  border-radius: 0 4px 4px 0;
+.explorer__swatch {
+  width: 0.875rem;
+  height: 0.5rem;
+  border-radius: 2px;
+  background: var(--pass);
+  opacity: var(--op, 1);
 }
 
-.breakdown__value {
-  color: #ffffff;
-  font-size: 0.72rem;
+.explorer__swatch--fail {
+  background: var(--fail);
+  opacity: 1;
 }
+
+.explorer__panel {
+  overflow: hidden;
+}
+
+.explorer__bucket {
+  display: grid;
+  gap: 0.75rem 1.5rem;
+  padding: 1.375rem 1.75rem;
+  align-items: center;
+}
+
+.explorer__bucket + .explorer__bucket {
+  border-top: 1px solid var(--rule);
+}
+
+.explorer__label {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.explorer__n {
+  margin-top: 0.25rem;
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+
+.explorer__bars {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  gap: 0.375rem;
+  list-style: none;
+}
+
+.explorer__bars li {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+}
+
+.explorer__bars .passtrack {
+  flex: 1;
+}
+
+.explorer__value {
+  width: 3.5rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+@media (min-width: 48rem) {
+  .explorer__bucket {
+    grid-template-columns: 12.5rem minmax(0, 1fr);
+  }
+}
+
+/* Leaderboard (2b): additions to theme-2b.css */
+
+.board-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.board-head .section-title {
+  margin-top: 0.625rem;
+}
+
+.board__head-cell {
+  padding: 0.875rem 0.75rem;
+}
+
+.board__row--head > :first-child,
+.board__rank {
+  padding-left: 1.25rem;
+}
+
+.board__cell.board__rank {
+  color: var(--ink-faint);
+}
+
+.board__cell.board__agent {
+  display: grid;
+  gap: 0.2rem;
+  font-family: var(--font-sans);
+}
+
+.board__agent strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.board__agent span {
+  color: var(--ink-faint);
+  font-size: 0.8125rem;
+}
+
+.board__cell.board__pass {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+  padding-right: 1.5rem;
+}
+
+.board__pass-value {
+  width: 4.25rem;
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.board__pass-value.board__cell--best {
+  color: var(--pass-text);
+}
+
+.board__row--baseline .board__agent strong,
+.board__row--baseline .board__pass-value {
+  color: var(--ink-soft);
+}
+
+.passbar.passbar--baseline {
+  background: transparent;
+  outline: 1px dashed var(--rule-strong);
+}
+
+.passbar.passbar--baseline > span {
+  border: 1px dashed var(--pass-text);
+  background: transparent;
+}
+
+.board__note {
+  margin-top: 0.875rem;
+  color: var(--ink-faint);
+  font-size: 0.8125rem;
+}
+
