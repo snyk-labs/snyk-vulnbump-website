@@ -16,7 +16,7 @@ import PageHero from "../components/site/PageHero.astro";
 import { benchmark, funnelLanes, gateDetails } from "../data";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { displayOrder, passOpacity } from "../lib/colors";
-import { formatInteger, formatPercent, formatRatio } from "../lib/format";
+import { formatInteger, formatPercent, formatRatio, formatWholePercent } from "../lib/format";
 import { countWord, indexLabel } from "../lib/words";
 
 const { configurations, flowSteps, dimensions, release, findings, model, baseline } = benchmark;
@@ -29,9 +29,12 @@ const breakdownSeries = displayOrder(configurations).map(({ id, label, highlight
   op: op[id]!,
   breakdowns,
 }));
+// Draft v2 reports these bump rates to whole percent.
 const bumpJumps = baseline.jumps
-  .map((j) => `${formatPercent(j.passed / j.attempts)} of ${j.label.toLowerCase()} upgrades (${j.passed}/${j.attempts})`)
+  .map((j) => `${formatWholePercent(j.passed / j.attempts)} of ${j.label.toLowerCase()} upgrades (${j.passed}/${j.attempts})`)
   .join(", ");
+const wholeShare = (x: { passed: number; attempts: number }) =>
+  `${formatWholePercent(x.passed / x.attempts)} (${x.passed}/${x.attempts})`;
 const share = (x: { passed: number; attempts: number }) =>
   `${formatPercent(x.passed / x.attempts)} (${formatRatio(x.passed, x.attempts)})`;
 const agentAttempts = configurations.reduce((t, c) => t + c.attempts, 0);
@@ -85,7 +88,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("breakdown")}
     eyebrow="Explorer"
     title="Where upgrades pass or break"
-    description={`Share of fixable vulnerability instances fixed by an attempt that passed every gate. Transitive instances make up 70% of the fixable ones and require reasoning about the dependency graph. Per upgrade, the package manager bump passes ${share(baseline.transitiveOnly)} of upgrades that fix only transitive vulnerabilities, against ${share(baseline.otherDependency)} of the rest. Vulnerability-heavy repositories are harder too: the Spearman correlation between a repository's baseline vulnerability count and its PASS rate is −0.57 for the Evo Remediation Agent, −0.31 for Claude Code + Snyk scan and −0.48 for Claude Code unaided.`}
+    description={`Share of fixable vulnerability instances fixed by an attempt that passed every gate. Transitive instances make up 70% of the fixable ones and require reasoning about the dependency graph. Per upgrade, the package manager bump passes ${wholeShare(baseline.transitiveOnly)} of upgrades that fix only transitive vulnerabilities, against ${wholeShare(baseline.otherDependency)} of the rest, and Claude Code + Snyk scan leaves the vulnerability in place in 28% of upgrades that fix only transitive vulnerabilities, against 9% of upgrades of declared dependencies. Vulnerability-heavy repositories are harder too: the Spearman correlation between a repository's baseline vulnerability count and its PASS rate is −0.57 for the Evo Remediation Agent, −0.31 for Claude Code + Snyk scan and −0.48 for Claude Code unaided.`}
   >
     <VulnBreakdown
       client:visible
@@ -114,10 +117,30 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
           session without saving it; the Evo Remediation Agent wrote it to the
           project's <code>.npmrc</code> and passes 11 of the 18 upgrades (Claude
           Code + Snyk scan 2, Claude Code unaided 5, the bump none), so this is not
-          a fixture defect. 19 of the 30 agent attempts that failed this gate (11
+          a fixture defect. Without this repository the bump passes 144 of 289
+          upgrades (49.8%). 19 of the 30 agent attempts that failed this gate (11
           for Claude Code + Snyk scan, 8 unaided) passed every other gate on the
           lenient fallback install; counting them would raise Claude Code + Snyk
           scan's PASS rate to 81.1% and Claude Code unaided's to 62.2%.
+        </p>
+        <p>
+          <strong>Version and code compatibility.</strong> Claude Code + Snyk scan
+          often stops within the current major version even when told the target
+          (for example dropwizard-core 2.1.12 instead of 5.0.2). In 8 Claude Code +
+          Snyk scan and 15 Claude Code unaided failures the fixed release needs a
+          newer Python than the project targets (filelock 3.20.3 requires Python
+          3.10), and Poetry rejects 26 of the bump's targets outright for the same
+          reason. Six Evo Remediation Agent failures, in two TypeScript
+          repositories, come from a broad lockfile regeneration that moved
+          transitive packages to type definitions the project's older compiler
+          cannot parse. Its code-compatibility failures (15 of 30, 13 of them major,
+          10 in dddsample-core and openhospital-core) include Spring 6's move from
+          <code>javax.*</code> to <code>jakarta.*</code>, logback-classic 1.6 missing
+          classes under Dropwizard 2.0, and new optimistic-locking failures under
+          Hibernate 6. It also once upgraded more than needed: a caret range
+          (<code>agenda@^4.0.0</code>) floated to a release with a new major
+          version of the MongoDB driver, where Claude Code + Snyk scan pinned 4.0.0
+          and passed.
         </p>
         <p>
           <strong>Only one attempt exhausted its turn budget</strong>, an Evo
@@ -134,7 +157,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("head-to-head")}
     eyebrow="Head to head"
     title="Four gates, one verdict"
-    description="The Evo Remediation Agent never leaves dependencies unresolvable and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code's, partly because Claude Code often does not take the upgrade. On dependencies, build and tests combined the agents are level; what separates them is whether the vulnerability is fixed. The package manager bump, which applies Snyk's recommended upgrade and nothing else, trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks."
+    description="The Evo Remediation Agent passes every gate on 90.2% of upgrades, 12.7 percentage points more than Claude Code + Snyk scan and 30.6 more than Claude Code unaided, and fixes 95.9% of vulnerability instances; the Snyk scan and target version raise Claude Code's PASS rate by 17.9 points. The Evo Remediation Agent never leaves dependencies unresolvable and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code's, partly because Claude Code often does not take the upgrade. On dependencies, build and tests combined the agents are level; what separates them is whether the vulnerability is fixed. The package manager bump, which applies Snyk's recommended upgrade and nothing else, trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks."
   >
     <div class="stack">
       <GateScorecard />
@@ -170,7 +193,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("advice")}
     eyebrow="Beyond Snyk's advice"
     title="The agents differ where the advice is not enough"
-    description={`The package manager bump sets the named package to Snyk's recommended version with the project's own package manager and changes nothing else. It passes ${baseline.passed} of the ${baseline.attempts} upgrades. All three agents pass 86–99% of those, but 36–82% of the other 163, which supply 34 of the Evo Remediation Agent's 39 extra PASSes over Claude Code + Snyk scan. The agents rarely break what the bump solves: the Evo Remediation Agent's only regression is a caret-range upgrade, and 24 of Claude Code's 26 leave the vulnerability in place.`}
+    description={`The package manager bump sets the named package to Snyk's recommended version with the project's own package manager and changes nothing else. It passes ${baseline.passed} of the ${baseline.attempts} upgrades. All three agents pass 86–99% of those, but 36–82% of the other 163, which supply 34 of the Evo Remediation Agent's 39 extra PASSes over Claude Code + Snyk scan. The agents rarely break what the bump solves: the Evo Remediation Agent's only regression is a caret-range upgrade, and 24 of Claude Code's 26 leave the vulnerability in place. Claude Code unaided, which must find a fixed version itself, loses 14% of the upgrades the advice alone solves, each time by leaving the vulnerability in place.`}
   >
     <div class="stack">
       <AdviceSplit />

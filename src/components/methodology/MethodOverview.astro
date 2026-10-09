@@ -9,14 +9,13 @@ import { countWord, indexLabel } from "../../lib/words";
  */
 const { summary, scope, methodology, metrics, model, budgets } = benchmark;
 const gates = metrics.filter((m) => m.kind === "gate");
-const hours = budgets.timeoutMinutesPerAttempt / 60;
 const setup = [
   {
     key: "Model",
     value: model.name,
     text: `All three agents use the same model via ${model.provider}. Claude Code ${model.claudeCodeVersion}.`,
   },
-  { key: "Budget", value: `${budgets.turnsPerUpgrade} turns · ${hours} h`, text: budgets.turns },
+  { key: "Budget", value: `${budgets.turnsPerUpgrade} turns per upgrade`, text: budgets.turns },
   {
     key: "Runs",
     value: "One per agent",

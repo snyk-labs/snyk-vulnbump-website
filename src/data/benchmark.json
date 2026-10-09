@@ -257,7 +257,7 @@
     {
       "id": "severity",
       "label": "Severity",
-      "note": "Evaluation-time scans rate none of the fixable instances critical."
+      "note": "Evaluation-time scans rate none of the fixable instances critical, even those with CVSS ≥ 9.0."
     }
   ],
   "failureReasons": [
@@ -1571,7 +1571,7 @@
       {
         "id": "direct",
         "label": "Direct dependency share",
-        "note": "Share of findings whose vulnerable package is declared in the manifest. Production comes from a 1% project sample (4.2 million findings).",
+        "note": "Share of findings whose vulnerable package is declared in the manifest. Production comes from a 1% project sample (4.2 million findings, 3.9 million of them in the six package managers).",
         "categories": [
           "Maven",
           "Gradle",

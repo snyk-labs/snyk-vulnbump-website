@@ -89,9 +89,10 @@ const paperDate = new Date(`${paper.date}T00:00:00Z`).toLocaleDateString("en-GB"
         {" "}{formatInteger(production.organisations)} organisations and
         {" "}{millions(production.issueProjectPairs)} unique issue–project pairs. A
         vulnerability present in 1,000 projects counts 1,000 times, because each
-        project is a separate remediation task. Java, JavaScript and Python
-        account for almost 95% of findings, and Maven, Gradle, npm, Yarn, pip and
-        Poetry cover about 92% of all pairs, so VulnBump targets these six.
+        project is a separate remediation task. Java (62.7%), JavaScript (22.1%) and
+        Python (9.9%) account for almost 95% of findings, and Maven, Gradle, npm,
+        Yarn, pip and Poetry cover about 92% of all pairs, so VulnBump targets
+        these six.
       </p>
 
       <h3>Candidates</h3>
@@ -460,9 +461,12 @@ Issues to fix by upgrading:
           <strong>Test strength.</strong> Six repositories (91 of the 307
           upgrades) have at most four passing baseline tests, leaving most of the
           work to the build gate, and client tests often miss the call sites an
-          upgrade breaks. Agents can also run these tests, so one that over-fits to
-          them would still pass. This matters less for a gate that only asks that
-          existing behaviour be kept.
+          upgrade breaks; even tests generated for those call sites mostly catch
+          crashes, not behavioural changes. Agents can also run these tests, so one
+          that over-fits to them would still pass: in DepBench, the visible tests or
+          build passed before the held-out tests failed in 61.8% (322/521) of
+          annotated non-passing attempts. This matters less for a gate that only
+          asks that existing behaviour be kept.
         </li>
         <li>
           <strong>Verifier noise.</strong> Test identities omit the module name, so
@@ -540,7 +544,8 @@ Issues to fix by upgrading:
         here, and may recommend different target versions. The numbers describe
         the database as of 4–5 October 2026. Of three advisories published between
         the last baseline scan (5 October) and the package manager bump run (8
-        October), one is fixed only from tomcat-embed-websocket 10.1.60, so two
+        October), one, SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494 (CVE-2026-76183,
+        high severity), is fixed only from tomcat-embed-websocket 10.1.60, so two
         upgrades in tokuhirom/java-handbook changed their target from 10.1.59 to
         10.1.60; the bump is paired with the agents on all 307 upgrades, including
         these two. Runs scanned on different days should
