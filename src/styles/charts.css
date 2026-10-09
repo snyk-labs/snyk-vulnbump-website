@@ -1,0 +1,535 @@
+/*
+ * Shared chart anatomy on Midnight. Every figure has: an optional control row,
+ * a labelled plot inside a rounded panel, a live readout for hover/focus, an
+ * exact-value table, and a provenance caption.
+ */
+
+.chart {
+  display: grid;
+  margin: 0;
+  gap: var(--space-3);
+  /* Let wide tables inside <details> scroll instead of widening the figure. */
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.chart__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Segmented pill control */
+.chart__segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 0.25rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-pill);
+  gap: 0.2rem;
+}
+
+.chart__segmented button {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.9rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: var(--font-weight-control);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chart__segmented button:hover {
+  background: var(--panel-hover);
+  color: #ffffff;
+}
+
+.chart__segmented button[aria-pressed="true"] {
+  background: #ffffff;
+  color: #030328;
+}
+
+.chart__hint {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+  gap: var(--space-2) var(--space-4);
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  list-style: none;
+}
+
+.chart__legend li {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.chart__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.chart__plot {
+  position: relative;
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.chart__plot svg {
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart__plot :focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
+.chart__plot g:focus-visible .chart__focus {
+  stroke: var(--pink);
+  stroke-width: 2;
+}
+
+.chart-text {
+  fill: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.chart-text--strong {
+  fill: #ffffff;
+  font-weight: 600;
+}
+
+.chart-value {
+  fill: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tick {
+  fill: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.chart-stage {
+  fill: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chart-grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.chart-axis {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+/* Live readout: a mono status line with a pink rule, not a filled block. */
+.chart__readout {
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-left: 2px solid var(--pink);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--panel-strong);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart__readout strong {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.chart__table {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-size: var(--step--1);
+}
+
+.chart__table summary {
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.chart__table .table-scroll {
+  padding: 0 1rem 0.75rem;
+}
+
+.chart__caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.chart__tooltip {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  min-width: 11rem;
+  max-width: 16rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--chart-surface);
+  color: #ffffff;
+  font-size: var(--step--1);
+  gap: 0.15rem;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+}
+
+.chart__tooltip strong {
+  font-weight: 600;
+}
+
+.chart__tooltip span {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Exact-value tables (chart twins, scorecard, heatmap) */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  color: var(--ink-soft);
+  text-align: left;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.65rem 0.7rem;
+  border-top: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+.data-table thead th {
+  border-top: 0;
+  border-bottom: 1px solid var(--rule-strong);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: bottom;
+}
+
+.data-table tbody th {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.data-table td {
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .num {
+  text-align: right;
+}
+
+/* Shipping gates (funnel) */
+
+.gates__stages {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+  gap: 0.3rem 1rem;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  list-style: none;
+}
+
+.gates__stages .metric {
+  color: var(--ink-faint);
+  font-size: 0.72rem;
+}
+
+.gates__keys {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  gap: 0.35rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  list-style: none;
+}
+
+.gates__keys button {
+  display: grid;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  gap: 0.15rem 0.6rem;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gates__keys button:hover,
+.gates__keys button[aria-pressed="true"] {
+  border-color: var(--rule-strong);
+  background: var(--panel-hover);
+  color: #ffffff;
+}
+
+.gates__keys .metric {
+  color: #ffffff;
+}
+
+.gates__key-line {
+  width: 1.1rem;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.gates__key-line--baseline {
+  height: 0;
+  border-top: 2px dashed;
+  border-radius: 0;
+}
+
+/* The non-agent baseline in bar charts: an outline, never a fill. */
+.bar--baseline {
+  border: 1px dashed var(--series-baseline);
+  background: transparent;
+}
+
+.swatch--baseline {
+  border: 1px dashed var(--series-baseline);
+  background: transparent;
+}
+
+/* Outcome stack (100% stacked bars) */
+
+.outcome-chart__rows {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  gap: var(--space-4);
+  list-style: none;
+}
+
+.outcome-row {
+  display: grid;
+  gap: 0.4rem;
+  border-radius: 0.3rem;
+}
+
+.outcome-row:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.outcome-row__label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: var(--step--1);
+}
+
+.outcome-row__label strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.outcome-row__label span {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.outcome-row--muted .outcome-row__label strong {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.outcome-row__bar {
+  display: flex;
+  height: 1.5rem;
+  gap: 2px;
+}
+
+.outcome-seg {
+  display: flex;
+  min-width: 2px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.outcome-seg:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.outcome-seg.is-dimmed {
+  opacity: 0.35;
+}
+
+/* Scorecard */
+
+.scorecard th button {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  gap: 0.3rem;
+  align-items: baseline;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.scorecard th button:hover,
+.scorecard th[aria-sort] {
+  color: #ffffff;
+}
+
+.scorecard tbody th small {
+  display: block;
+  max-width: 22rem;
+  margin-top: 0.2rem;
+  color: var(--ink-faint);
+  font-size: var(--step--1);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.scorecard .tag {
+  margin-left: 0.45rem;
+  vertical-align: 0.1em;
+}
+
+.scorecard tr.is-highlight th,
+.scorecard tr.is-highlight td {
+  background: var(--panel-strong);
+}
+
+.scorecard tr.is-highlight th {
+  box-shadow: inset 2px 0 0 var(--pink);
+}
+
+@media (max-width: 35rem) {
+  .chart__plot {
+    padding: var(--space-3);
+  }
+}
+
+/* Vulnerability breakdown (grouped bars) */
+
+.breakdown__groups {
+  display: grid;
+  gap: var(--space-4) var(--space-6);
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+.breakdown__group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.breakdown__label {
+  color: #ffffff;
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+
+.breakdown__bars {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  gap: 3px;
+  list-style: none;
+}
+
+.breakdown__bars li {
+  border-radius: 0.2rem;
+}
+
+.breakdown__bars li:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.breakdown__track {
+  display: flex;
+  height: 1rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breakdown__bar {
+  display: block;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+
+.breakdown__value {
+  color: #ffffff;
+  font-size: 0.72rem;
+}

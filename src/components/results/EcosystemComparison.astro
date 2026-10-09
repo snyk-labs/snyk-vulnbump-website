@@ -1,0 +1,195 @@
+---
+import { benchmark } from "../../data";
+import { configColors } from "../../lib/colors";
+import { formatFraction, formatPercent, formatRatio, formatWholePercent } from "../../lib/format";
+
+/*
+ * PASS rate by package manager, averaged per repository (paper Figure 6), one
+ * bar per configuration. The table adds the pooled rate and each gate.
+ */
+const { ecosystems, configurations, release } = benchmark;
+const colors = configColors(configurations);
+
+const groups = ecosystems.map((eco) => ({
+  eco,
+  results: configurations.map((c) => ({
+    config: c,
+    row: c.ecosystems.find((e) => e.id === eco.id)!,
+  })),
+}));
+---
+
+<figure class="chart">
+  <ul class="chart__legend" aria-label="Configurations">
+    {
+      configurations.map((c) => (
+        <li>
+          <span class="chart__swatch" style={`background: ${colors[c.id]}`} aria-hidden="true" />
+          {c.label}
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="chart__plot">
+    <div class="groups">
+      {
+        groups.map(({ eco, results }) => (
+          <section class="group" aria-label={`${eco.label} macro PASS rate`}>
+            <h3>
+              {eco.label}
+              <span class="metric">
+                {results[0]!.row.repos} repos · {results[0]!.row.attempts} upgrades
+              </span>
+            </h3>
+            <ul>
+              {results.map(({ config, row }) => {
+                const rate = row.macroPassRate;
+                return (
+                  <li aria-label={`${config.label}: macro PASS rate ${formatWholePercent(rate)}; ${formatRatio(row.passed, row.attempts)} upgrades passed`}>
+                    <span class="track">
+                      <span class="bar" style={`--value: ${rate}; background: ${colors[config.id]}`} />
+                      <span class="value metric">{formatWholePercent(rate)}</span>
+                    </span>
+                    <span class:list={["n metric", { "is-highlight": config.highlight }]}>
+                      {config.label} · {formatRatio(row.passed, row.attempts)} passed
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+
+  <details class="chart__table">
+    <summary>View all package-manager metrics</summary>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Package manager</th>
+            <th scope="col">Agent</th>
+            <th scope="col" class="num">Upgrades</th>
+            <th scope="col" class="num">Dependencies resolve</th>
+            <th scope="col" class="num">Instances fixed</th>
+            <th scope="col" class="num">Build</th>
+            <th scope="col" class="num">Tests</th>
+            <th scope="col" class="num">PASS, pooled</th>
+            <th scope="col" class="num">PASS, macro</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            groups.flatMap(({ eco, results }) =>
+              results.map(({ config, row }) => (
+                <tr>
+                  <th scope="row">{eco.label}</th>
+                  <td>{config.label}</td>
+                  <td class="num">{row.attempts}</td>
+                  <td class="num">{formatPercent(row.depsResolveRate)}</td>
+                  <td class="num">
+                    {formatRatio(row.vulnsCleared, row.vulnsFixable)} ({formatPercent(row.vulnsCleared / row.vulnsFixable)})
+                  </td>
+                  <td class="num">{formatPercent(row.buildPassRate)}</td>
+                  <td class="num">{formatPercent(row.testsPassRate)}</td>
+                  <td class="num">{formatPercent(row.passed / row.attempts)}</td>
+                  <td class="num">{formatFraction(row.macroPassRate)}</td>
+                </tr>
+              )),
+            )
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>Macro = mean of per-repository PASS rates</span>
+    <span>With three repositories in several package managers, these rates are indicative only</span>
+  </figcaption>
+</figure>
+
+<style>
+  .groups {
+    display: grid;
+    gap: var(--space-5) var(--space-6);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  h3 {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  h3 .metric {
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    font-weight: 400;
+  }
+
+  .group ul {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: 0.45rem;
+    list-style: none;
+  }
+
+  .group li {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .track {
+    display: flex;
+    height: 1.1rem;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 4.5rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  .n {
+    color: var(--ink-faint);
+    font-size: 0.68rem;
+  }
+
+  .n.is-highlight {
+    color: var(--ink-soft);
+  }
+
+  @media (min-width: 48rem) {
+    .groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .groups {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

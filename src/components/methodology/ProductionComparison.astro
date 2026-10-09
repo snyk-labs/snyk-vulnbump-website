@@ -1,0 +1,299 @@
+---
+import { benchmark } from "../../data";
+
+/*
+ * Snyk production against the VulnBump dataset (paper Figure 2): grouped bars
+ * per dimension, production muted and VulnBump in Hot Pink, then box plots of
+ * vulnerabilities per project by language.
+ */
+const { representativeness, release } = benchmark;
+const { dimensions, perProject } = representativeness;
+const series = [
+  { key: "production", label: "Snyk Open Source production", color: "var(--series-muted-strong)" },
+  { key: "benchmark", label: "VulnBump dataset", color: "var(--series-highlight)" },
+] as const;
+
+const boxMax = Math.max(...perProject.groups.flatMap((g) => [g.production[3], g.benchmark[3]]));
+const axisMax = Math.ceil(boxMax / 25) * 25;
+const ticks = Array.from({ length: axisMax / 25 + 1 }, (_, i) => i * 25).filter((t) => t % 50 === 0);
+const pos = (v: number) => `${(v / axisMax) * 100}%`;
+const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+---
+
+<figure class="chart">
+  <ul class="chart__legend" aria-label="Series">
+    {
+      series.map((s) => (
+        <li>
+          <span class="chart__swatch" style={`background: ${s.color}`} aria-hidden="true" />
+          {s.label}
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="panels">
+    {
+      dimensions.map((dim) => {
+        const max = Math.max(...dim.production, ...dim.benchmark, 1);
+        return (
+          <section class="chart__plot panel" aria-labelledby={`dist-${dim.id}`}>
+            <h3 id={`dist-${dim.id}`}>{dim.label}</h3>
+            <p class="note">{dim.note}</p>
+            <ul class="cats">
+              {dim.categories.map((cat, i) => (
+                <li>
+                  <span class="cat">{cat}</span>
+                  <span class="pair">
+                    {series.map((s, si) => {
+                      const v = dim[s.key][i]!;
+                      return (
+                        <span class="track" aria-label={`${cat}, ${s.label}: ${v.toFixed(dim.decimals[si])}%`}>
+                          <span class="bar" style={`--value: ${v / max}; background: ${s.color}`} />
+                          <span class="value metric">{v.toFixed(dim.decimals[si])}%</span>
+                        </span>
+                      );
+                    })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })
+    }
+
+    <section class="chart__plot panel panel--wide" aria-labelledby="dist-per-project">
+      <h3 id="dist-per-project">{perProject.label}</h3>
+      <p class="note">{perProject.note}</p>
+      <ul class="boxes">
+        {
+          perProject.groups.map((g) => (
+            <li>
+              <span class="cat">{g.label}</span>
+              <span class="pair">
+                {series.map((s) => {
+                  const [p25, p50, p75, p90] = g[s.key];
+                  return (
+                    <span
+                      class="box-track"
+                      aria-label={`${g.label}, ${s.label}: median ${fmt(p50)}, P25 ${fmt(p25)}, P75 ${fmt(p75)}, P90 ${fmt(p90)}`}
+                    >
+                      <span class="whisker" style={`left: ${pos(p75)}; width: calc(${pos(p90)} - ${pos(p75)})`} />
+                      <span class="box" style={`left: ${pos(p25)}; width: calc(${pos(p75)} - ${pos(p25)}); background: ${s.color}`} />
+                      <span class="median" style={`left: ${pos(p50)}`} />
+                      <span class="box-value metric" style={`left: calc(${pos(p90)} + 0.4rem)`}>
+                        {fmt(p50)} <span>({fmt(p25)}–{fmt(p75)}, P90 {fmt(p90)})</span>
+                      </span>
+                    </span>
+                  );
+                })}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="axis" aria-hidden="true">
+        {ticks.map((t) => <span class="chart-tick-label metric" style={`left: ${pos(t)}`}>{t}</span>)}
+      </div>
+    </section>
+  </div>
+
+  <details class="chart__table">
+    <summary>View exact values</summary>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Dimension</th>
+            <th scope="col">Category</th>
+            <th scope="col" class="num">Production</th>
+            <th scope="col" class="num">VulnBump</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            dimensions.flatMap((dim) =>
+              dim.categories.map((cat, i) => (
+                <tr>
+                  <th scope="row">{dim.label}</th>
+                  <td>{cat}</td>
+                  <td class="num">{dim.production[i]!.toFixed(dim.decimals[0])}%</td>
+                  <td class="num">{dim.benchmark[i]!.toFixed(dim.decimals[1])}%</td>
+                </tr>
+              )),
+            )
+          }
+          {
+            perProject.groups.map((g) => (
+              <tr>
+                <th scope="row">{perProject.label}</th>
+                <td>{g.label} (P25 / median / P75 / P90)</td>
+                <td class="num">{g.production.map(fmt).join(" / ")}</td>
+                <td class="num">{g.benchmark.map(fmt).join(" / ")}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>{representativeness.source}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .panels {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .panel {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+  }
+
+  h3 {
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  .note {
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  .cats,
+  .boxes {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  .cats li,
+  .boxes li {
+    display: grid;
+    gap: 0.2rem 0.75rem;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .cat {
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .pair {
+    display: grid;
+    gap: 3px;
+  }
+
+  .track {
+    display: flex;
+    height: 0.9rem;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 3rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.68rem;
+  }
+
+  /* Box plots share one axis; values sit past the whisker. */
+  .boxes .pair {
+    gap: 6px;
+    margin-right: 13rem;
+  }
+
+  .box-track {
+    position: relative;
+    display: block;
+    height: 0.9rem;
+  }
+
+  .whisker {
+    position: absolute;
+    top: 50%;
+    height: 0;
+    border-top: 1px solid var(--ink-faint);
+  }
+
+  .box {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .median {
+    position: absolute;
+    top: -2px;
+    width: 0;
+    height: calc(100% + 4px);
+    border-left: 2px solid #ffffff;
+  }
+
+  .box-value {
+    position: absolute;
+    top: -0.05rem;
+    color: #ffffff;
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+
+  .box-value span {
+    color: var(--ink-faint);
+  }
+
+  .axis {
+    position: relative;
+    height: 1rem;
+    margin-left: calc(5.5rem + 0.75rem);
+    margin-right: 13rem;
+    border-top: 1px solid var(--chart-axis);
+  }
+
+  .chart-tick-label {
+    position: absolute;
+    top: 0.2rem;
+    color: var(--ink-faint);
+    font-size: 0.62rem;
+    transform: translateX(-50%);
+  }
+
+  @media (max-width: 40rem) {
+    .boxes .pair,
+    .axis {
+      margin-right: 0;
+    }
+
+    .box-value {
+      display: none;
+    }
+  }
+
+  @media (min-width: 60rem) {
+    .panels {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel--wide {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

@@ -1,0 +1,2238 @@
+{
+  "release": {
+    "name": "Snyk VulnBump 1.0",
+    "shortName": "1.0",
+    "datasetVersion": "1.0.0-draft",
+    "status": "draft",
+    "publishedAt": null,
+    "runDate": "2026-10-05"
+  },
+  "tagline": {
+    "lead": "Fixed isn't",
+    "keyword": "shipped."
+  },
+  "researchQuestion": "Can an AI agent upgrade a vulnerable dependency without breaking the project?",
+  "studyLabel": "A benchmark for fixing vulnerable dependencies in real projects while keeping the build and tests green",
+  "summary": "VulnBump is 307 upgrade tasks covering 2,066 fixable vulnerabilities in 43 repositories across six package managers, matched to Snyk production vulnerability distributions. An upgrade passes only if, in a fresh container, dependencies resolve, a rescan shows the targeted vulnerabilities fixed, the project builds, and every previously passing test still passes. All three agents use the same model, Claude Sonnet 5.5, and a non-agent baseline that only applies Snyk's recommended version shows how much of the work that advice already does.",
+  "links": {
+    "paper": null,
+    "publication": null,
+    "github": "https://github.com/snyk-labs/snyk-vulnbump",
+    "harness": null
+  },
+  "scope": [
+    {
+      "value": 307,
+      "label": "upgrades"
+    },
+    {
+      "value": 43,
+      "label": "repositories"
+    },
+    {
+      "value": 6,
+      "label": "package managers"
+    },
+    {
+      "value": 2066,
+      "label": "fixable vulnerabilities"
+    }
+  ],
+  "headline": {
+    "metric": "allGates",
+    "label": "of the Evo Remediation Agent's upgrades passed all four gates",
+    "caption": "Share of 307 upgrades · one run per agent"
+  },
+  "highlights": [
+    {
+      "value": "90.2%",
+      "label": "of upgrades passed all four gates with the Evo Remediation Agent (277 of 307), against 77.5% for Claude Code + Snyk scan and 59.6% for Claude Code unaided.",
+      "href": "/results#head-to-head",
+      "tone": "strong"
+    },
+    {
+      "value": "82.2%",
+      "label": "of the 163 upgrades that Snyk's recommended version alone does not solve were passed by the Evo Remediation Agent, against 61.3% and 36.2% for Claude Code.",
+      "href": "/results#advice",
+      "tone": "strong"
+    },
+    {
+      "value": "46.9%",
+      "label": "of upgrades pass when only Snyk's recommended version is applied. This non-agent baseline trails every agent on every gate.",
+      "href": "/results#advice",
+      "tone": "contrast"
+    }
+  ],
+  "findings": [
+    {
+      "title": "A purpose-built engine leads, robustly",
+      "summary": "The Evo Remediation Agent passes 90.2% of upgrades, against 77.5% for Claude Code + Snyk scan and 59.6% for Claude Code unaided. The gap lies in how often every targeted vulnerability is fixed: 97.1%, 83.7% and 63.5%. The ranking holds per repository (macro PASS rates 0.93, 0.80 and 0.68) and in every paired comparison.",
+      "caveat": "One run per agent, each upgrade attempted on its own. All three keep 92.8–93.8% of projects working, so a breakage-only check would not separate them.",
+      "href": "/results#head-to-head"
+    },
+    {
+      "title": "The agents differ mainly where Snyk's advice is not enough",
+      "summary": "Applying only Snyk's recommended version passes 144 of the 307 upgrades. All three agents pass 86–99% of those, but on the other 163 the Evo Remediation Agent passes 82.2%, Claude Code + Snyk scan 61.3% and Claude Code unaided 36.2%.",
+      "caveat": "The package manager bump never moves a BOM or parent or tries another version, so it is a lower bound on what mechanical upgrading can solve, and value-add an upper bound on what an agent contributes beyond it.",
+      "href": "/results#advice"
+    },
+    {
+      "title": "The agents fail in opposite ways",
+      "summary": "Claude Code mostly leaves the vulnerability in place, often by staying within the current major version or pinning transitive packages: the rescan is the first failed gate in 48 of Claude Code + Snyk scan's 69 failures and 107 of Claude Code unaided's 124. The Evo Remediation Agent usually lands the upgrade; 21 of its 30 failures break the build or tests, mostly in major framework migrations.",
+      "caveat": "Without Snyk, Claude Code claimed fixes that the rescan still found in 70 of its 124 failures. Root causes were assigned by heuristics and one annotator.",
+      "href": "/results#failures"
+    },
+    {
+      "title": "Major jumps and transitive vulnerabilities are hardest",
+      "summary": "Major upgrades cost the Evo Remediation Agent 16 PASS points relative to non-major ones, and Claude Code 27–28. About half of its major PASSes (52% of 95) edited application source. Transitive vulnerabilities, 70% of fixable instances, show the widest gap: 0.73, 0.59 and 0.28 fixed by a PASS.",
+      "caveat": "The jump is that of the recommended upgrade; per-vulnerability rates use the smallest jump to a fixed release.",
+      "href": "/results#jump"
+    }
+  ],
+  "methodology": [
+    {
+      "title": "Setup and baseline",
+      "when": "Once per repository",
+      "text": "The pinned repository is installed, scanned with snyk test, built and tested. Every Snyk fix group becomes one upgrade.",
+      "steps": [
+        "Depth-1 clone of one pinned commit",
+        "Install and scan dependencies",
+        "Build and record passing tests",
+        "One fix group = one upgrade"
+      ]
+    },
+    {
+      "title": "Remediation",
+      "when": "Once per upgrade and agent",
+      "text": "Once per upgrade, the agent edits a fresh copy of the repository in a sandbox; the package manager bump only applies Snyk's recommended version and refreshes the lockfile.",
+      "steps": [
+        "Fresh copy and prompt",
+        "Non-root, read-only root filesystem",
+        "No history, GitHub blocked",
+        "Three agents, plus the package manager bump"
+      ]
+    },
+    {
+      "title": "Verification",
+      "when": "Fresh root container and caches",
+      "text": "A separate container applies four gates to the agent's working tree, without trusting anything the agent reports.",
+      "steps": [
+        "Dependencies resolve",
+        "Rescan: targeted vulnerabilities fixed",
+        "Build",
+        "Tests: baseline passes kept"
+      ]
+    }
+  ],
+  "model": {
+    "name": "Claude Sonnet 5.5",
+    "id": "claude-sonnet-5-5",
+    "provider": "Vertex AI",
+    "claudeCodeVersion": "2.1.289"
+  },
+  "budgets": {
+    "timeoutMinutesPerAttempt": 360,
+    "turns": "All three agents use the same model and 110 agent turns per upgrade."
+  },
+  "pricing": {
+    "inputPerMillion": 2,
+    "outputPerMillion": 10
+  },
+  "metrics": [
+    {
+      "key": "depsResolve",
+      "label": "Dependencies resolve",
+      "kind": "gate",
+      "basis": "attempts",
+      "description": "The edited manifests and lockfiles install with the package manager's strict command, as CI would run it."
+    },
+    {
+      "key": "vulnsFixed",
+      "label": "Targeted vulnerabilities fixed",
+      "kind": "gate",
+      "basis": "attempts",
+      "description": "A post-fix Snyk rescan covers every target manifest and no longer finds the upgrade's targeted vulnerabilities."
+    },
+    {
+      "key": "cleanBuild",
+      "label": "Build",
+      "kind": "gate",
+      "basis": "attempts",
+      "description": "The project still compiles, type-checks, or imports its main package."
+    },
+    {
+      "key": "testsPass",
+      "label": "Tests pass",
+      "kind": "gate",
+      "basis": "attempts",
+      "description": "Every test that passed in the baseline still passes; a skipped or missing test is a regression."
+    },
+    {
+      "key": "projectWorks",
+      "label": "Project still works",
+      "kind": "outcome",
+      "basis": "attempts",
+      "description": "Dependencies, build and tests all pass, whether or not the vulnerability was fixed."
+    },
+    {
+      "key": "allGates",
+      "label": "All gates pass (PASS)",
+      "kind": "verdict",
+      "basis": "attempts",
+      "description": "All four gates pass: the vulnerability is fixed and the project still works."
+    },
+    {
+      "key": "instancesFixed",
+      "label": "Vulnerability instances fixed",
+      "kind": "outcome",
+      "basis": "vulnerabilities",
+      "description": "Share of the fixable vulnerability instances fixed. An instance whose rescan failed counts as not fixed."
+    }
+  ],
+  "primaryMetric": "allGates",
+  "flowSteps": [
+    {
+      "label": "Attempted",
+      "dropLabel": null
+    },
+    {
+      "label": "Dependencies resolve",
+      "dropLabel": "Dependencies did not resolve"
+    },
+    {
+      "label": "Vulnerabilities fixed",
+      "dropLabel": "Vulnerability not fixed"
+    },
+    {
+      "label": "Build",
+      "dropLabel": "Build broken"
+    },
+    {
+      "label": "Tests pass",
+      "dropLabel": "Tests regressed"
+    }
+  ],
+  "ecosystems": [
+    {
+      "id": "maven",
+      "label": "Maven"
+    },
+    {
+      "id": "gradle",
+      "label": "Gradle"
+    },
+    {
+      "id": "npm",
+      "label": "npm"
+    },
+    {
+      "id": "yarn",
+      "label": "Yarn"
+    },
+    {
+      "id": "pip",
+      "label": "pip"
+    },
+    {
+      "id": "poetry",
+      "label": "Poetry"
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "upgradeSize",
+      "label": "Fix difficulty",
+      "note": "Smallest semantic-versioning jump from the installed version to a fixed release."
+    },
+    {
+      "id": "dependency",
+      "label": "Dependency type",
+      "note": "Whether the vulnerable package is declared in the manifest (direct) or arrives through another package (transitive)."
+    },
+    {
+      "id": "ecosystem",
+      "label": "Package manager"
+    },
+    {
+      "id": "severity",
+      "label": "Severity",
+      "note": "Evaluation-time scans rate none of the fixable instances critical."
+    }
+  ],
+  "failureReasons": [
+    {
+      "key": "vulnNotCleared",
+      "label": "Vulnerability not fixed"
+    },
+    {
+      "key": "depsUnresolved",
+      "label": "Dependencies did not resolve"
+    },
+    {
+      "key": "buildBroken",
+      "label": "Build broken"
+    },
+    {
+      "key": "testsRegressed",
+      "label": "Tests regressed"
+    },
+    {
+      "key": "verificationScanFailed",
+      "label": "Rescan failed"
+    }
+  ],
+  "qualitySignals": [
+    {
+      "key": "claimedNotFixed",
+      "label": "False fix claims",
+      "description": "Attempts where the agent said it fixed a vulnerability that the rescan still found.",
+      "attention": true
+    },
+    {
+      "key": "newVulnAttempts",
+      "label": "Attempts with new vulnerabilities",
+      "description": "Attempts whose post-fix scan shows vulnerability instances that were not in the baseline. PASS does not penalise them.",
+      "attention": true
+    },
+    {
+      "key": "newVulns",
+      "label": "New vulnerability instances",
+      "description": "Summed over attempts (critical / high / medium / low), which overcounts unique instances because upgrades in the same repository often introduce the same one.",
+      "attention": true
+    },
+    {
+      "key": "remaining",
+      "label": "Fixable instances remaining",
+      "description": "Fixable instances not fixed, failed rescans included (critical / high / medium / low).",
+      "attention": true
+    },
+    {
+      "key": "moved",
+      "label": "Vulnerabilities moved",
+      "description": "Remaining instances that now arrive through a direct dependency that did not carry them in the baseline.",
+      "attention": true
+    },
+    {
+      "key": "testsModified",
+      "label": "Tests modified",
+      "description": "Attempts that edited test files. Agents may adapt tests to breaking changes, but must not edit them to make them pass.",
+      "attention": true
+    },
+    {
+      "key": "unrelatedBumps",
+      "label": "Unrelated bumps",
+      "description": "Attempts that bumped a direct dependency outside the fix's lane. Recorded, not failed.",
+      "attention": true
+    },
+    {
+      "key": "remainingUnverified",
+      "label": "Unverified instances",
+      "description": "Remaining instances that only a failed rescan reports.",
+      "attention": false
+    },
+    {
+      "key": "rescanFailed",
+      "label": "Rescan failed",
+      "description": "Attempts whose verification rescan failed. They count as failures.",
+      "attention": false
+    },
+    {
+      "key": "turnCapped",
+      "label": "Turn budget exhausted",
+      "description": "Attempts that used their whole turn budget.",
+      "attention": false
+    },
+    {
+      "key": "timedOut",
+      "label": "Timed out",
+      "description": "Attempts stopped at the wall-clock budget. They would count as failures.",
+      "attention": false
+    },
+    {
+      "key": "snykPolicyModified",
+      "label": ".snyk policy edits",
+      "description": "Attempts that added or edited a .snyk file. Both scans ignore policy, so this cannot hide a vulnerability.",
+      "attention": false
+    },
+    {
+      "key": "harnessErrors",
+      "label": "Infrastructure errors",
+      "description": "The agent never started, or the container ran out of memory. Excluded from every rate.",
+      "attention": false
+    }
+  ],
+  "configurations": [
+    {
+      "id": "claude-code",
+      "label": "Claude Code unaided",
+      "shortLabel": "CC unaided",
+      "description": "Claude Code 2.1.289 given the same prompt without the target version (\"Upgrade X to fix these vulnerabilities:\") and no Snyk access, so it must find a fixed version itself, for example from OSV.",
+      "kind": "agent",
+      "highlight": false,
+      "run": {
+        "harness": "claude-unaided",
+        "report": "benchmarking/reports/claude-code-unaided-easy",
+        "harnessRevision": "3863936",
+        "cliBuild": "dd75097",
+        "generatedAt": "2026-10-04T19:27:22"
+      },
+      "attempts": 307,
+      "repos": 43,
+      "vulnsFixable": 2066,
+      "vulnsCleared": 1503,
+      "passed": 183,
+      "values": {
+        "depsResolve": 0.954397,
+        "vulnsFixed": 0.635179,
+        "cleanBuild": 0.983713,
+        "testsPass": 0.986971,
+        "projectWorks": 0.938111,
+        "allGates": 0.596091,
+        "instancesFixed": 0.727493
+      },
+      "flow": [
+        307,
+        293,
+        186,
+        183,
+        183
+      ],
+      "ecosystems": [
+        {
+          "id": "maven",
+          "repos": 18,
+          "attempts": 106,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 733,
+          "vulnsFixable": 1124,
+          "buildPassRate": 1.0,
+          "testsPassRate": 0.981,
+          "passed": 56,
+          "macroPassRate": 0.539
+        },
+        {
+          "id": "gradle",
+          "repos": 3,
+          "attempts": 66,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 160,
+          "vulnsFixable": 204,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 38,
+          "macroPassRate": 0.746
+        },
+        {
+          "id": "npm",
+          "repos": 11,
+          "attempts": 57,
+          "depsResolveRate": 0.772,
+          "vulnsCleared": 265,
+          "vulnsFixable": 318,
+          "buildPassRate": 0.93,
+          "testsPassRate": 0.982,
+          "passed": 38,
+          "macroPassRate": 0.858
+        },
+        {
+          "id": "yarn",
+          "repos": 3,
+          "attempts": 18,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 124,
+          "vulnsFixable": 127,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 16,
+          "macroPassRate": 0.865
+        },
+        {
+          "id": "pip",
+          "repos": 3,
+          "attempts": 18,
+          "depsResolveRate": 0.944,
+          "vulnsCleared": 130,
+          "vulnsFixable": 131,
+          "buildPassRate": 0.944,
+          "testsPassRate": 0.944,
+          "passed": 17,
+          "macroPassRate": 0.933
+        },
+        {
+          "id": "poetry",
+          "repos": 5,
+          "attempts": 42,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 91,
+          "vulnsFixable": 162,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 18,
+          "macroPassRate": 0.49
+        }
+      ],
+      "breakdowns": {
+        "upgradeSize": [
+          {
+            "label": "Patch",
+            "n": 713,
+            "fixRate": 0.894811,
+            "passRate": 0.373072
+          },
+          {
+            "label": "Minor",
+            "n": 782,
+            "fixRate": 0.740409,
+            "passRate": 0.445013
+          },
+          {
+            "label": "Major",
+            "n": 520,
+            "fixRate": 0.461538,
+            "passRate": 0.301923
+          },
+          {
+            "label": "Unclassifiable",
+            "n": 51,
+            "fixRate": 0.901961,
+            "passRate": 0.235294
+          }
+        ],
+        "dependency": [
+          {
+            "label": "Direct",
+            "n": 617,
+            "fixRate": 0.766613,
+            "passRate": 0.620746
+          },
+          {
+            "label": "Transitive",
+            "n": 1449,
+            "fixRate": 0.710835,
+            "passRate": 0.276052
+          }
+        ],
+        "ecosystem": [
+          {
+            "label": "Gradle",
+            "n": 204,
+            "fixRate": 0.784314,
+            "passRate": 0.52451
+          },
+          {
+            "label": "Maven",
+            "n": 1124,
+            "fixRate": 0.652135,
+            "passRate": 0.200178
+          },
+          {
+            "label": "npm",
+            "n": 318,
+            "fixRate": 0.833333,
+            "passRate": 0.455975
+          },
+          {
+            "label": "pip",
+            "n": 131,
+            "fixRate": 0.992366,
+            "passRate": 0.992366
+          },
+          {
+            "label": "Poetry",
+            "n": 162,
+            "fixRate": 0.561728,
+            "passRate": 0.469136
+          },
+          {
+            "label": "Yarn",
+            "n": 127,
+            "fixRate": 0.976378,
+            "passRate": 0.787402
+          }
+        ],
+        "severity": [
+          {
+            "label": "High",
+            "n": 1035,
+            "fixRate": 0.727536,
+            "passRate": 0.397101
+          },
+          {
+            "label": "Medium",
+            "n": 872,
+            "fixRate": 0.744266,
+            "passRate": 0.392202
+          },
+          {
+            "label": "Low",
+            "n": 159,
+            "fixRate": 0.63522,
+            "passRate": 0.188679
+          }
+        ]
+      },
+      "failures": {
+        "reasons": {
+          "vulnNotCleared": 112,
+          "testsRegressed": 4,
+          "buildBroken": 5,
+          "depsUnresolved": 14,
+          "verificationScanFailed": 2
+        },
+        "categories": [
+          {
+            "stage": "deps",
+            "label": "Dependency conflict",
+            "count": 14
+          },
+          {
+            "stage": "build",
+            "label": "Other",
+            "count": 3
+          },
+          {
+            "stage": "tests",
+            "label": "Other",
+            "count": 2
+          }
+        ]
+      },
+      "cost": {
+        "method": "tool-reported",
+        "perAttempt": {
+          "mean": 0.1014,
+          "p50": 0.08,
+          "p90": 0.18,
+          "p95": 0.21
+        },
+        "total": 31.13
+      },
+      "latencySeconds": {
+        "mean": 127.9,
+        "p50": 65.0,
+        "p90": 332.6,
+        "p95": 541.7
+      },
+      "tokens": {
+        "input": 45201807,
+        "output": 596239,
+        "meanInput": 147237,
+        "meanOutput": 1942
+      },
+      "quality": {
+        "newVulns": [
+          0,
+          462,
+          328,
+          7
+        ],
+        "remaining": [
+          0,
+          282,
+          223,
+          58
+        ],
+        "claimedNotFixed": 70,
+        "moved": 10,
+        "testsModified": 22,
+        "unrelatedBumps": 34,
+        "remainingUnverified": 12,
+        "rescanFailed": 2,
+        "turnCapped": 0,
+        "timedOut": 0,
+        "snykPolicyModified": 0,
+        "harnessErrors": 0,
+        "newVulnAttempts": 33
+      },
+      "green": 288,
+      "macro": {
+        "rate": 0.68,
+        "ci": [
+          0.582,
+          0.77
+        ]
+      },
+      "gates": {
+        "depsResolve": 293,
+        "vulnsFixed": 195,
+        "cleanBuild": 302,
+        "testsPass": 303
+      },
+      "macroFixed": {
+        "rate": 0.807,
+        "ci": [
+          0.722,
+          0.882
+        ]
+      },
+      "reposAllPass": 15,
+      "reposNonePass": 3,
+      "jumps": [
+        {
+          "id": "patch",
+          "attempts": 57,
+          "passed": 44
+        },
+        {
+          "id": "minor",
+          "attempts": 123,
+          "passed": 83
+        },
+        {
+          "id": "major",
+          "attempts": 118,
+          "passed": 50
+        },
+        {
+          "id": "minor0x",
+          "attempts": 9,
+          "passed": 6
+        }
+      ]
+    },
+    {
+      "id": "claude-code-snyk",
+      "label": "Claude Code + Snyk scan",
+      "shortLabel": "CC + Snyk scan",
+      "description": "Claude Code 2.1.289 prompted with the upgrade's \"Upgrade X to Y to fix\" block from the baseline Snyk report, which names the target version, and the project's test command. It may run snyk test.",
+      "kind": "agent",
+      "highlight": false,
+      "run": {
+        "harness": "claude-aided",
+        "report": "benchmarking/reports/claude-code-aided-easy",
+        "harnessRevision": "3863936",
+        "cliBuild": "aaf12cb",
+        "generatedAt": "2026-10-05T09:26:51"
+      },
+      "attempts": 307,
+      "repos": 43,
+      "vulnsFixable": 2066,
+      "vulnsCleared": 1716,
+      "passed": 238,
+      "values": {
+        "depsResolve": 0.947883,
+        "vulnsFixed": 0.837134,
+        "cleanBuild": 0.980456,
+        "testsPass": 0.990228,
+        "projectWorks": 0.928339,
+        "allGates": 0.775244,
+        "instancesFixed": 0.830591
+      },
+      "flow": [
+        307,
+        291,
+        243,
+        240,
+        238
+      ],
+      "ecosystems": [
+        {
+          "id": "maven",
+          "repos": 18,
+          "attempts": 106,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 874,
+          "vulnsFixable": 1124,
+          "buildPassRate": 1.0,
+          "testsPassRate": 0.981,
+          "passed": 78,
+          "macroPassRate": 0.75
+        },
+        {
+          "id": "gradle",
+          "repos": 3,
+          "attempts": 66,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 179,
+          "vulnsFixable": 204,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 59,
+          "macroPassRate": 0.929
+        },
+        {
+          "id": "npm",
+          "repos": 11,
+          "attempts": 57,
+          "depsResolveRate": 0.719,
+          "vulnsCleared": 266,
+          "vulnsFixable": 318,
+          "buildPassRate": 0.895,
+          "testsPassRate": 1.0,
+          "passed": 36,
+          "macroPassRate": 0.783
+        },
+        {
+          "id": "yarn",
+          "repos": 3,
+          "attempts": 18,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 127,
+          "vulnsFixable": 127,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 18,
+          "macroPassRate": 1.0
+        },
+        {
+          "id": "pip",
+          "repos": 3,
+          "attempts": 18,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 131,
+          "vulnsFixable": 131,
+          "buildPassRate": 1.0,
+          "testsPassRate": 0.944,
+          "passed": 17,
+          "macroPassRate": 0.967
+        },
+        {
+          "id": "poetry",
+          "repos": 5,
+          "attempts": 42,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 139,
+          "vulnsFixable": 162,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 30,
+          "macroPassRate": 0.724
+        }
+      ],
+      "breakdowns": {
+        "upgradeSize": [
+          {
+            "label": "Patch",
+            "n": 713,
+            "fixRate": 0.960729,
+            "passRate": 0.669004
+          },
+          {
+            "label": "Minor",
+            "n": 782,
+            "fixRate": 0.805627,
+            "passRate": 0.654731
+          },
+          {
+            "label": "Major",
+            "n": 520,
+            "fixRate": 0.680769,
+            "passRate": 0.553846
+          },
+          {
+            "label": "Unclassifiable",
+            "n": 51,
+            "fixRate": 0.921569,
+            "passRate": 0.333333
+          }
+        ],
+        "dependency": [
+          {
+            "label": "Direct",
+            "n": 617,
+            "fixRate": 0.849271,
+            "passRate": 0.714749
+          },
+          {
+            "label": "Transitive",
+            "n": 1449,
+            "fixRate": 0.822636,
+            "passRate": 0.588682
+          }
+        ],
+        "ecosystem": [
+          {
+            "label": "Gradle",
+            "n": 204,
+            "fixRate": 0.877451,
+            "passRate": 0.740196
+          },
+          {
+            "label": "Maven",
+            "n": 1124,
+            "fixRate": 0.77758,
+            "passRate": 0.524021
+          },
+          {
+            "label": "npm",
+            "n": 318,
+            "fixRate": 0.836478,
+            "passRate": 0.534591
+          },
+          {
+            "label": "pip",
+            "n": 131,
+            "fixRate": 1.0,
+            "passRate": 0.923664
+          },
+          {
+            "label": "Poetry",
+            "n": 162,
+            "fixRate": 0.858025,
+            "passRate": 0.839506
+          },
+          {
+            "label": "Yarn",
+            "n": 127,
+            "fixRate": 1.0,
+            "passRate": 1.0
+          }
+        ],
+        "severity": [
+          {
+            "label": "High",
+            "n": 1035,
+            "fixRate": 0.861836,
+            "passRate": 0.670531
+          },
+          {
+            "label": "Medium",
+            "n": 872,
+            "fixRate": 0.808486,
+            "passRate": 0.611239
+          },
+          {
+            "label": "Low",
+            "n": 159,
+            "fixRate": 0.748428,
+            "passRate": 0.421384
+          }
+        ]
+      },
+      "failures": {
+        "reasons": {
+          "testsRegressed": 3,
+          "vulnNotCleared": 50,
+          "buildBroken": 6,
+          "depsUnresolved": 16,
+          "verificationScanFailed": 1
+        },
+        "categories": [
+          {
+            "stage": "deps",
+            "label": "Dependency conflict",
+            "count": 15
+          },
+          {
+            "stage": "build",
+            "label": "Other",
+            "count": 3
+          },
+          {
+            "stage": "tests",
+            "label": "Removed API",
+            "count": 1
+          },
+          {
+            "stage": "tests",
+            "label": "Other",
+            "count": 1
+          },
+          {
+            "stage": "tests",
+            "label": "Test assertion",
+            "count": 1
+          },
+          {
+            "stage": "deps",
+            "label": "Other",
+            "count": 1
+          }
+        ]
+      },
+      "cost": {
+        "method": "tool-reported",
+        "perAttempt": {
+          "mean": 0.1201,
+          "p50": 0.1,
+          "p90": 0.19,
+          "p95": 0.25
+        },
+        "total": 36.86
+      },
+      "latencySeconds": {
+        "mean": 180.1,
+        "p50": 124.0,
+        "p90": 407.8,
+        "p95": 568.0
+      },
+      "tokens": {
+        "input": 60385752,
+        "output": 667605,
+        "meanInput": 196696,
+        "meanOutput": 2175
+      },
+      "quality": {
+        "newVulns": [
+          0,
+          336,
+          275,
+          12
+        ],
+        "remaining": [
+          0,
+          143,
+          167,
+          40
+        ],
+        "claimedNotFixed": 2,
+        "moved": 1,
+        "testsModified": 26,
+        "unrelatedBumps": 26,
+        "remainingUnverified": 14,
+        "rescanFailed": 1,
+        "turnCapped": 0,
+        "timedOut": 0,
+        "snykPolicyModified": 0,
+        "harnessErrors": 0,
+        "newVulnAttempts": 30
+      },
+      "green": 285,
+      "macro": {
+        "rate": 0.801,
+        "ci": [
+          0.71,
+          0.879
+        ]
+      },
+      "gates": {
+        "depsResolve": 291,
+        "vulnsFixed": 257,
+        "cleanBuild": 301,
+        "testsPass": 304
+      },
+      "macroFixed": {
+        "rate": 0.901,
+        "ci": [
+          0.841,
+          0.951
+        ]
+      },
+      "reposAllPass": 22,
+      "reposNonePass": 2,
+      "jumps": [
+        {
+          "id": "patch",
+          "attempts": 57,
+          "passed": 56
+        },
+        {
+          "id": "minor",
+          "attempts": 123,
+          "passed": 106
+        },
+        {
+          "id": "major",
+          "attempts": 118,
+          "passed": 72
+        },
+        {
+          "id": "minor0x",
+          "attempts": 9,
+          "passed": 4
+        }
+      ]
+    },
+    {
+      "id": "evo-remediation-agent",
+      "label": "Evo Remediation Agent",
+      "shortLabel": "Evo agent",
+      "description": "Snyk's agentic remediation engine (snyk fix --agentic), run once per upgrade with the ids of the vulnerabilities it fixes. It leverages Snyk intelligence, which evolved from Snyk's deterministic SCA fix engine, runs its own scan, the build and tests, and repairs errors before finishing.",
+      "kind": "snyk",
+      "highlight": true,
+      "run": {
+        "harness": "remy",
+        "report": "benchmarking/reports/remy-easy",
+        "harnessRevision": "5305349",
+        "cliBuild": "aaf12cb",
+        "generatedAt": "2026-10-05T17:29:05"
+      },
+      "attempts": 307,
+      "repos": 43,
+      "vulnsFixable": 2066,
+      "vulnsCleared": 1982,
+      "passed": 277,
+      "values": {
+        "depsResolve": 1.0,
+        "vulnsFixed": 0.970684,
+        "cleanBuild": 0.967427,
+        "testsPass": 0.954397,
+        "projectWorks": 0.928339,
+        "allGates": 0.90228,
+        "instancesFixed": 0.959342
+      },
+      "flow": [
+        307,
+        307,
+        298,
+        289,
+        277
+      ],
+      "ecosystems": [
+        {
+          "id": "maven",
+          "repos": 18,
+          "attempts": 106,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 1058,
+          "vulnsFixable": 1124,
+          "buildPassRate": 0.991,
+          "testsPassRate": 0.877,
+          "passed": 88,
+          "macroPassRate": 0.885
+        },
+        {
+          "id": "gradle",
+          "repos": 3,
+          "attempts": 66,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 204,
+          "vulnsFixable": 204,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 66,
+          "macroPassRate": 1.0
+        },
+        {
+          "id": "npm",
+          "repos": 11,
+          "attempts": 57,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 305,
+          "vulnsFixable": 318,
+          "buildPassRate": 0.842,
+          "testsPassRate": 0.982,
+          "passed": 47,
+          "macroPassRate": 0.937
+        },
+        {
+          "id": "yarn",
+          "repos": 3,
+          "attempts": 18,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 127,
+          "vulnsFixable": 127,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 18,
+          "macroPassRate": 1.0
+        },
+        {
+          "id": "pip",
+          "repos": 3,
+          "attempts": 18,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 128,
+          "vulnsFixable": 131,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 17,
+          "macroPassRate": 0.967
+        },
+        {
+          "id": "poetry",
+          "repos": 5,
+          "attempts": 42,
+          "depsResolveRate": 1.0,
+          "vulnsCleared": 160,
+          "vulnsFixable": 162,
+          "buildPassRate": 1.0,
+          "testsPassRate": 1.0,
+          "passed": 41,
+          "macroPassRate": 0.978
+        }
+      ],
+      "breakdowns": {
+        "upgradeSize": [
+          {
+            "label": "Patch",
+            "n": 713,
+            "fixRate": 0.957924,
+            "passRate": 0.788219
+          },
+          {
+            "label": "Minor",
+            "n": 782,
+            "fixRate": 0.976982,
+            "passRate": 0.824808
+          },
+          {
+            "label": "Major",
+            "n": 520,
+            "fixRate": 0.934615,
+            "passRate": 0.698077
+          },
+          {
+            "label": "Unclassifiable",
+            "n": 51,
+            "fixRate": 0.960784,
+            "passRate": 0.882353
+          }
+        ],
+        "dependency": [
+          {
+            "label": "Direct",
+            "n": 617,
+            "fixRate": 0.972447,
+            "passRate": 0.905997
+          },
+          {
+            "label": "Transitive",
+            "n": 1449,
+            "fixRate": 0.953761,
+            "passRate": 0.728778
+          }
+        ],
+        "ecosystem": [
+          {
+            "label": "Gradle",
+            "n": 204,
+            "fixRate": 1.0,
+            "passRate": 1.0
+          },
+          {
+            "label": "Maven",
+            "n": 1124,
+            "fixRate": 0.941281,
+            "passRate": 0.701068
+          },
+          {
+            "label": "npm",
+            "n": 318,
+            "fixRate": 0.959119,
+            "passRate": 0.654088
+          },
+          {
+            "label": "pip",
+            "n": 131,
+            "fixRate": 0.977099,
+            "passRate": 0.977099
+          },
+          {
+            "label": "Poetry",
+            "n": 162,
+            "fixRate": 0.987654,
+            "passRate": 0.987654
+          },
+          {
+            "label": "Yarn",
+            "n": 127,
+            "fixRate": 1.0,
+            "passRate": 1.0
+          }
+        ],
+        "severity": [
+          {
+            "label": "High",
+            "n": 1035,
+            "fixRate": 0.966184,
+            "passRate": 0.802899
+          },
+          {
+            "label": "Medium",
+            "n": 872,
+            "fixRate": 0.959862,
+            "passRate": 0.793578
+          },
+          {
+            "label": "Low",
+            "n": 159,
+            "fixRate": 0.91195,
+            "passRate": 0.578616
+          }
+        ]
+      },
+      "failures": {
+        "reasons": {
+          "vulnNotCleared": 9,
+          "testsRegressed": 14,
+          "buildBroken": 10,
+          "depsUnresolved": 0,
+          "verificationScanFailed": 0
+        },
+        "categories": [
+          {
+            "stage": "build",
+            "label": "Other",
+            "count": 7
+          },
+          {
+            "stage": "tests",
+            "label": "Dependency conflict",
+            "count": 5
+          },
+          {
+            "stage": "tests",
+            "label": "Binary incompatibility",
+            "count": 4
+          },
+          {
+            "stage": "build",
+            "label": "Removed API",
+            "count": 3
+          },
+          {
+            "stage": "tests",
+            "label": "Test assertion",
+            "count": 1
+          },
+          {
+            "stage": "tests",
+            "label": "Other",
+            "count": 1
+          },
+          {
+            "stage": "tests",
+            "label": "Turn cap",
+            "count": 1
+          }
+        ]
+      },
+      "cost": {
+        "method": "list-price-estimate",
+        "perAttempt": {
+          "mean": 2.0937,
+          "p50": 0.74,
+          "p90": 5.02,
+          "p95": 8.69
+        },
+        "total": 642.76
+      },
+      "latencySeconds": {
+        "mean": 456.3,
+        "p50": 190.0,
+        "p90": 803.4,
+        "p95": 3123.1
+      },
+      "tokens": {
+        "input": 303637453,
+        "output": 3548517,
+        "meanInput": 989047,
+        "meanOutput": 11559
+      },
+      "quality": {
+        "newVulns": [
+          0,
+          703,
+          518,
+          13
+        ],
+        "remaining": [
+          0,
+          35,
+          35,
+          14
+        ],
+        "claimedNotFixed": 1,
+        "moved": 0,
+        "testsModified": 51,
+        "unrelatedBumps": 74,
+        "remainingUnverified": 0,
+        "rescanFailed": 0,
+        "turnCapped": 1,
+        "timedOut": 0,
+        "snykPolicyModified": 0,
+        "harnessErrors": 0,
+        "newVulnAttempts": 62
+      },
+      "green": 285,
+      "macro": {
+        "rate": 0.931,
+        "ci": [
+          0.881,
+          0.971
+        ]
+      },
+      "gates": {
+        "depsResolve": 307,
+        "vulnsFixed": 298,
+        "cleanBuild": 297,
+        "testsPass": 293
+      },
+      "macroFixed": {
+        "rate": 0.976,
+        "ci": [
+          0.952,
+          0.994
+        ]
+      },
+      "reposAllPass": 32,
+      "reposNonePass": 0,
+      "jumps": [
+        {
+          "id": "patch",
+          "attempts": 57,
+          "passed": 55
+        },
+        {
+          "id": "minor",
+          "attempts": 123,
+          "passed": 120
+        },
+        {
+          "id": "major",
+          "attempts": 118,
+          "passed": 95
+        },
+        {
+          "id": "minor0x",
+          "attempts": 9,
+          "passed": 7
+        }
+      ]
+    }
+  ],
+  "citation": {
+    "bibtexKey": "pasiunaite2026vulnbump",
+    "title": "VulnBump: A Benchmark for Fixing Vulnerable Dependencies in Real Projects While Keeping the Build and Tests Green",
+    "authors": [
+      "Gabija Pasiunaite",
+      "Ryan McMorrow",
+      "Brian Clark",
+      "Liran Tal",
+      "Luke Tu"
+    ],
+    "year": 2026,
+    "url": null
+  },
+  "selection": {
+    "collected": 805,
+    "collectedRepos": 721,
+    "candidates": 767,
+    "sources": [
+      {
+        "label": "Popular open-source projects",
+        "count": 274,
+        "description": "Curated applications, frameworks, starters and tutorials for Gradle, npm, Yarn, pip and Poetry."
+      },
+      {
+        "label": "GitHub searches for vulnerable packages",
+        "count": 280,
+        "description": "Manifests that pin known-vulnerable versions of frequently vulnerable packages, plus searches for the less-represented package managers."
+      },
+      {
+        "label": "BUMP projects",
+        "count": 133,
+        "description": "Maven projects from the BUMP benchmark, pinned at the parent of a breaking-update commit, where the project still builds and passes its tests."
+      },
+      {
+        "label": "Gradle submodules",
+        "count": 46,
+        "description": "Modules of large multi-project builds, scanned separately so that one task does not span hundreds of modules."
+      },
+      {
+        "label": "Popular Maven projects",
+        "count": 34,
+        "description": "Top-starred on GitHub, pinned at their last commit before 21 May 2022, CORAL's snapshot date."
+      }
+    ],
+    "funnel": [
+      {
+        "label": "Candidates",
+        "count": 767,
+        "dropLabel": null
+      },
+      {
+        "label": "Dependencies resolve",
+        "count": 508,
+        "dropLabel": "Did not resolve"
+      },
+      {
+        "label": "Build",
+        "count": 475,
+        "dropLabel": "Build failed"
+      },
+      {
+        "label": "Tests run",
+        "count": 199,
+        "dropLabel": "No tests ran"
+      },
+      {
+        "label": ">85% tests green",
+        "count": 141,
+        "dropLabel": "Tests not green"
+      },
+      {
+        "label": "Vulnerable",
+        "count": 99,
+        "dropLabel": "No vulnerabilities"
+      },
+      {
+        "label": "Selected",
+        "count": 43,
+        "dropLabel": "Not selected"
+      }
+    ],
+    "qualifying": {
+      "candidates": 99,
+      "repos": 97,
+      "byEcosystem": {
+        "maven": 55,
+        "gradle": 9,
+        "npm": 19,
+        "yarn": 8,
+        "pip": 3,
+        "poetry": 5
+      }
+    },
+    "composition": {
+      "byLanguage": [
+        {
+          "label": "Java",
+          "count": 21
+        },
+        {
+          "label": "JavaScript",
+          "count": 14
+        },
+        {
+          "label": "Python",
+          "count": 8
+        }
+      ],
+      "medianVulns": 32,
+      "vulnRange": [
+        1,
+        252
+      ],
+      "medianTests": 61,
+      "popular": 19
+    },
+    "selectionNote": "Selected to match Snyk production data in direct versus transitive share, vulnerabilities per repository, severity and fix difficulty. Package managers are weighted so that each has enough cases to report on, rather than strictly in proportion to production.",
+    "excludedReason": "A few very large repositories, such as Apache Kafka and Spring Framework, were excluded because in earlier runs they ran out of memory or time, or had hundreds of upgrades that would take days to evaluate one by one. VulnBump therefore under-represents very large repositories and, since several are Gradle builds, Gradle."
+  },
+  "representativeness": {
+    "source": "Snyk Open Source production findings in monitored projects, April–September 2026 (about 300,000 organisations and 459 million unique issue–project pairs), against the 43 VulnBump repositories, where vulnerabilities are counted once per project and vulnerability id.",
+    "dimensions": [
+      {
+        "id": "package-manager",
+        "label": "Package manager",
+        "note": "Share of vulnerabilities.",
+        "categories": [
+          "Maven",
+          "Gradle",
+          "npm",
+          "Yarn",
+          "pip",
+          "Poetry"
+        ],
+        "production": [
+          51,
+          17,
+          17,
+          5,
+          6,
+          5
+        ],
+        "benchmark": [
+          57.1,
+          2.9,
+          19.8,
+          7.8,
+          6.2,
+          6.2
+        ],
+        "decimals": [
+          0,
+          0
+        ]
+      },
+      {
+        "id": "severity",
+        "label": "Severity",
+        "note": "Share of vulnerabilities.",
+        "categories": [
+          "Critical",
+          "High",
+          "Medium",
+          "Low"
+        ],
+        "production": [
+          7.1,
+          47.5,
+          40.8,
+          4.6
+        ],
+        "benchmark": [
+          6.3,
+          44.3,
+          41.5,
+          7.8
+        ],
+        "decimals": [
+          0,
+          0
+        ]
+      },
+      {
+        "id": "direct",
+        "label": "Direct dependency share",
+        "note": "Share of findings whose vulnerable package is declared in the manifest. Production comes from a 1% project sample (4.2 million findings).",
+        "categories": [
+          "Maven",
+          "Gradle",
+          "npm",
+          "Yarn",
+          "pip",
+          "Poetry"
+        ],
+        "production": [
+          14.0,
+          19.4,
+          34.6,
+          22.1,
+          55.5,
+          15.3
+        ],
+        "benchmark": [
+          15.8,
+          11.3,
+          32.7,
+          24.8,
+          84.0,
+          11.5
+        ],
+        "decimals": [
+          0,
+          0
+        ]
+      },
+      {
+        "id": "difficulty",
+        "label": "Fix difficulty",
+        "note": "Smallest semantic-versioning jump to a fixed release. Production is weighted by each language's share of findings (Java 40/33/26, JavaScript 27/48/25, Python 21/50/29); VulnBump covers the 29 repositories classified at mining time.",
+        "categories": [
+          "Patch",
+          "Minor",
+          "Major"
+        ],
+        "production": [
+          35,
+          38,
+          26
+        ],
+        "benchmark": [
+          33,
+          42,
+          24
+        ],
+        "decimals": [
+          0,
+          0
+        ]
+      }
+    ],
+    "perProject": {
+      "label": "Vulnerabilities per project",
+      "note": "Bar: P25 to P75 · tick: median · whisker: P90.",
+      "groups": [
+        {
+          "label": "Java",
+          "production": [
+            13,
+            51,
+            114,
+            163
+          ],
+          "benchmark": [
+            13,
+            40,
+            92,
+            130
+          ]
+        },
+        {
+          "label": "JavaScript",
+          "production": [
+            6,
+            20,
+            49,
+            85
+          ],
+          "benchmark": [
+            4.5,
+            14,
+            73.8,
+            118.7
+          ]
+        },
+        {
+          "label": "Python",
+          "production": [
+            5,
+            15,
+            43,
+            78
+          ],
+          "benchmark": [
+            23,
+            29,
+            36,
+            56.4
+          ]
+        }
+      ]
+    },
+    "deviations": [
+      "Gradle is under-represented (3% of vulnerabilities against 17%), with a lower direct share (11% against 19%). Most Gradle candidates failed the filters, and the largest that qualified were too large to evaluate.",
+      "pip vulnerabilities are mostly direct (84% against 56%), because only three pip repositories qualified."
+    ]
+  },
+  "paper": {
+    "title": "VulnBump: A Benchmark for Fixing Vulnerable Dependencies in Real Projects While Keeping the Build and Tests Green",
+    "authors": [
+      "Gabija Pasiunaite",
+      "Ryan McMorrow",
+      "Brian Clark",
+      "Liran Tal",
+      "Luke Tu"
+    ],
+    "affiliation": "Snyk",
+    "date": "2026-10-09"
+  },
+  "production": {
+    "period": "April–September 2026",
+    "organisations": 300000,
+    "issueProjectPairs": 459000000,
+    "fixedVersionShare": 94.0,
+    "fixPathShare": 93.7,
+    "openShare": 89,
+    "resolvedShare": 10
+  },
+  "jumpCategories": [
+    {
+      "id": "patch",
+      "label": "Patch"
+    },
+    {
+      "id": "minor",
+      "label": "Minor"
+    },
+    {
+      "id": "major",
+      "label": "Major"
+    },
+    {
+      "id": "minor0x",
+      "label": "Minor (0.x)",
+      "note": "Semantic versioning gives no compatibility guarantee below 1.0."
+    }
+  ],
+  "rootCauses": {
+    "note": "One root cause per failed attempt, grouped by cause rather than by first failed gate, assigned from each attempt's report, diff and logs by rule-based heuristics and one annotator, with no agreement measure.",
+    "groups": [
+      {
+        "label": "Vulnerability remediation",
+        "description": "The targeted vulnerability remains.",
+        "counts": {
+          "claude-code": 92,
+          "claude-code-snyk": 40,
+          "evo-remediation-agent": 8,
+          "package-manager-bump": 77
+        },
+        "causes": [
+          {
+            "label": "Upgraded to still-vulnerable version",
+            "counts": {
+              "claude-code": 64,
+              "claude-code-snyk": 13,
+              "evo-remediation-agent": 1,
+              "package-manager-bump": 2
+            }
+          },
+          {
+            "label": "Still reachable via another path",
+            "counts": {
+              "claude-code": 13,
+              "claude-code-snyk": 15,
+              "evo-remediation-agent": 3,
+              "package-manager-bump": 75
+            }
+          },
+          {
+            "label": "No upgrade made, or reverted",
+            "counts": {
+              "claude-code": 15,
+              "claude-code-snyk": 12,
+              "evo-remediation-agent": 4,
+              "package-manager-bump": 0
+            }
+          }
+        ]
+      },
+      {
+        "label": "Version compatibility",
+        "description": "The new versions violate a version the project pins or requires: a dependency's declared range, the interpreter or the compiler.",
+        "counts": {
+          "claude-code": 30,
+          "claude-code-snyk": 25,
+          "evo-remediation-agent": 7,
+          "package-manager-bump": 54
+        },
+        "causes": [
+          {
+            "label": "Resolver rejects dependency versions",
+            "counts": {
+              "claude-code": 14,
+              "claude-code-snyk": 16,
+              "evo-remediation-agent": 0,
+              "package-manager-bump": 25
+            }
+          },
+          {
+            "label": "Fix requires newer Python",
+            "counts": {
+              "claude-code": 15,
+              "claude-code-snyk": 8,
+              "evo-remediation-agent": 1,
+              "package-manager-bump": 26
+            }
+          },
+          {
+            "label": "Dependencies need a newer compiler",
+            "counts": {
+              "claude-code": 1,
+              "claude-code-snyk": 1,
+              "evo-remediation-agent": 6,
+              "package-manager-bump": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Code compatibility",
+        "description": "A changed API or behaviour breaks the project.",
+        "counts": {
+          "claude-code": 2,
+          "claude-code-snyk": 4,
+          "evo-remediation-agent": 15,
+          "package-manager-bump": 28
+        },
+        "causes": [
+          {
+            "label": "Changed API breaks build",
+            "counts": {
+              "claude-code": 2,
+              "claude-code-snyk": 2,
+              "evo-remediation-agent": 3,
+              "package-manager-bump": 13
+            }
+          },
+          {
+            "label": "Class or method missing at runtime",
+            "counts": {
+              "claude-code": 0,
+              "claude-code-snyk": 1,
+              "evo-remediation-agent": 6,
+              "package-manager-bump": 12
+            }
+          },
+          {
+            "label": "Changed behaviour fails tests",
+            "counts": {
+              "claude-code": 0,
+              "claude-code-snyk": 1,
+              "evo-remediation-agent": 6,
+              "package-manager-bump": 3
+            }
+          }
+        ]
+      },
+      {
+        "label": "Other",
+        "description": "A package removed from PyPI, a source build failure and a failed rescan.",
+        "counts": {
+          "claude-code": 0,
+          "claude-code-snyk": 0,
+          "evo-remediation-agent": 0,
+          "package-manager-bump": 4
+        },
+        "causes": []
+      }
+    ]
+  },
+  "paired": {
+    "comparisons": [
+      {
+        "a": "evo-remediation-agent",
+        "b": "claude-code-snyk",
+        "aOnly": 46,
+        "bOnly": 7,
+        "p": 4e-08,
+        "macroDiff": 0.13,
+        "ci": [
+          0.062,
+          0.214
+        ],
+        "reposAhead": 16,
+        "reposBehind": 2
+      },
+      {
+        "a": "evo-remediation-agent",
+        "b": "claude-code",
+        "aOnly": 96,
+        "bOnly": 2,
+        "p": 3.1e-26,
+        "macroDiff": 0.251,
+        "ci": [
+          0.17,
+          0.341
+        ],
+        "reposAhead": null,
+        "reposBehind": null
+      },
+      {
+        "a": "claude-code-snyk",
+        "b": "claude-code",
+        "aOnly": 64,
+        "bOnly": 9,
+        "p": 2.4e-11,
+        "macroDiff": 0.121,
+        "ci": [
+          0.033,
+          0.203
+        ],
+        "reposAhead": null,
+        "reposBehind": null
+      }
+    ],
+    "agreement": [
+      {
+        "passedBy": [
+          "claude-code",
+          "claude-code-snyk",
+          "evo-remediation-agent"
+        ],
+        "count": 172
+      },
+      {
+        "passedBy": [
+          "claude-code-snyk",
+          "evo-remediation-agent"
+        ],
+        "count": 59
+      },
+      {
+        "passedBy": [
+          "claude-code",
+          "evo-remediation-agent"
+        ],
+        "count": 9
+      },
+      {
+        "passedBy": [
+          "claude-code",
+          "claude-code-snyk"
+        ],
+        "count": 2
+      },
+      {
+        "passedBy": [
+          "evo-remediation-agent"
+        ],
+        "count": 37
+      },
+      {
+        "passedBy": [
+          "claude-code-snyk"
+        ],
+        "count": 5
+      },
+      {
+        "passedBy": [
+          "claude-code"
+        ],
+        "count": 0
+      },
+      {
+        "passedBy": [],
+        "count": 23
+      }
+    ]
+  },
+  "relatedWork": {
+    "columns": [
+      "Real projects",
+      "Dependencies",
+      "Build",
+      "Tests",
+      "Vuln"
+    ],
+    "rows": [
+      {
+        "name": "BUMP",
+        "ecosystems": "Maven",
+        "size": "571 updates, 153 projects",
+        "trigger": "Breaking update",
+        "marks": [
+          "full",
+          "partial",
+          "full",
+          "full",
+          "none"
+        ]
+      },
+      {
+        "name": "BigBag",
+        "ecosystems": "Maven",
+        "size": "157 updates (BUMP subset)",
+        "trigger": "Breaking update",
+        "marks": [
+          "full",
+          "partial",
+          "full",
+          "full",
+          "none"
+        ]
+      },
+      {
+        "name": "DepRepair",
+        "ecosystems": "Maven, npm, Cargo, PyPI",
+        "size": "95 instances",
+        "trigger": "Major migration",
+        "marks": [
+          "full",
+          "none",
+          "partial",
+          "partial",
+          "none"
+        ]
+      },
+      {
+        "name": "DepBench",
+        "ecosystems": "npm/Yarn, Maven, Go, Cargo, Python",
+        "size": "203 tasks",
+        "trigger": "Bot upgrade PR",
+        "marks": [
+          "full",
+          "partial",
+          "partial",
+          "full",
+          "none"
+        ],
+        "note": "Held-out upgrade tests hidden from the agent."
+      },
+      {
+        "name": "CORAL",
+        "ecosystems": "Maven",
+        "size": "301 projects, 750 unique CVEs",
+        "trigger": "CVE",
+        "marks": [
+          "full",
+          "partial",
+          "full",
+          "full",
+          "partial"
+        ]
+      },
+      {
+        "name": "REQBench",
+        "ecosystems": "pip",
+        "size": "2,095 scenarios, 34 projects, 20 libraries",
+        "trigger": "Library upgrade",
+        "marks": [
+          "full",
+          "partial",
+          "partial",
+          "partial",
+          "none"
+        ]
+      },
+      {
+        "name": "LADU",
+        "ecosystems": "Maven",
+        "size": "3 synthetic repositories",
+        "trigger": "Major upgrade",
+        "marks": [
+          "none",
+          "none",
+          "none",
+          "none",
+          "none"
+        ]
+      },
+      {
+        "name": "VulnBump",
+        "ecosystems": "Maven, Gradle, npm, Yarn, pip, Poetry",
+        "size": "307 upgrades, 43 projects",
+        "trigger": "Vulnerability fix path",
+        "marks": [
+          "full",
+          "full",
+          "full",
+          "full",
+          "full"
+        ],
+        "highlight": true
+      }
+    ],
+    "note": "Vuln means a rescan with a production SCA scanner. Partial: dependencies checked only inside the Maven build (BUMP, BigBag, CORAL), in one combined install, build and test command (DepBench), or not scored separately (REQBench); build only as part of running the tests (DepRepair, DepBench) or a script (REQBench); tests only breakage-related ones (DepRepair) or a README script (REQBench); CVEs counted against the authors' own CVE-to-version mapping (CORAL). LADU builds and tests inside its agent loop but scores only overlap with manual upgrades. BUMP defines no repair scoring; its marks reflect the command used to reproduce each update."
+  },
+  "baseline": {
+    "id": "package-manager-bump",
+    "label": "Package manager bump",
+    "description": "The non-agent baseline: applies Snyk's recommended upgrade and nothing else. It uses no model, edits no code or tests, and never tries another version.",
+    "runDate": "2026-10-08",
+    "attempts": 307,
+    "repos": 43,
+    "vulnsFixable": 2066,
+    "vulnsCleared": 1168,
+    "passed": 144,
+    "green": 197,
+    "gates": {
+      "depsResolve": 253,
+      "vulnsFixed": 191,
+      "cleanBuild": 267,
+      "testsPass": 247
+    },
+    "values": {
+      "depsResolve": 0.824104,
+      "vulnsFixed": 0.62215,
+      "cleanBuild": 0.869707,
+      "testsPass": 0.80456,
+      "projectWorks": 0.641694,
+      "allGates": 0.469055,
+      "instancesFixed": 0.565344
+    },
+    "macro": {
+      "rate": 0.513,
+      "ci": [
+        0.397,
+        0.623
+      ]
+    },
+    "macroFixed": {
+      "rate": 0.725,
+      "ci": [
+        0.611,
+        0.832
+      ]
+    },
+    "reposAllPass": 10,
+    "reposNonePass": 10,
+    "remaining": [
+      0,
+      469,
+      341,
+      88
+    ],
+    "flow": [
+      307,
+      253,
+      175,
+      159,
+      144
+    ],
+    "jumps": [
+      {
+        "label": "Patch",
+        "attempts": 57,
+        "passed": 38
+      },
+      {
+        "label": "Minor (including 0.x)",
+        "attempts": 132,
+        "passed": 76
+      },
+      {
+        "label": "Major",
+        "attempts": 118,
+        "passed": 30
+      }
+    ],
+    "transitiveOnly": {
+      "attempts": 112,
+      "passed": 39
+    },
+    "otherDependency": {
+      "attempts": 195,
+      "passed": 105
+    },
+    "managedPins": {
+      "attempts": 76,
+      "passed": 21
+    },
+    "otherPins": {
+      "attempts": 231,
+      "passed": 123
+    }
+  },
+  "adviceSplit": {
+    "solvable": 144,
+    "other": 163,
+    "agents": [
+      {
+        "id": "claude-code",
+        "solvablePassed": 124,
+        "solvableMacro": {
+          "rate": 0.918,
+          "ci": [
+            0.859,
+            0.968
+          ]
+        },
+        "otherPassed": 59,
+        "otherMacro": {
+          "rate": 0.413,
+          "ci": [
+            0.288,
+            0.543
+          ]
+        },
+        "regressions": 20,
+        "valueAdd": 59,
+        "valueAddTestEdits": 11,
+        "valueAddManagedPins": 20,
+        "p": 1.3e-05
+      },
+      {
+        "id": "claude-code-snyk",
+        "solvablePassed": 138,
+        "solvableMacro": {
+          "rate": 0.986,
+          "ci": [
+            0.968,
+            1.0
+          ]
+        },
+        "otherPassed": 100,
+        "otherMacro": {
+          "rate": 0.647,
+          "ci": [
+            0.518,
+            0.768
+          ]
+        },
+        "regressions": 6,
+        "valueAdd": 100,
+        "valueAddTestEdits": 17,
+        "valueAddManagedPins": 42,
+        "p": 4.5e-23
+      },
+      {
+        "id": "evo-remediation-agent",
+        "solvablePassed": 143,
+        "solvableMacro": {
+          "rate": 0.997,
+          "ci": [
+            0.99,
+            1.0
+          ]
+        },
+        "otherPassed": 134,
+        "otherMacro": {
+          "rate": 0.87,
+          "ci": [
+            0.791,
+            0.94
+          ]
+        },
+        "regressions": 1,
+        "valueAdd": 134,
+        "valueAddTestEdits": 35,
+        "valueAddManagedPins": 47,
+        "p": 6.2e-39
+      }
+    ]
+  }
+}

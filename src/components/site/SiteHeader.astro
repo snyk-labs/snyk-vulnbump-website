@@ -1,0 +1,151 @@
+---
+import { navLinks } from "../../data";
+import Wordmark from "./Wordmark.astro";
+
+const path = Astro.url.pathname.replace(/\.html$/, "").replace(/\/$/, "") || "/";
+const isCurrent = (href: string) =>
+  href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`);
+---
+
+<header class="site-header">
+  <div class="header-inner container">
+    <Wordmark />
+
+    <nav class="desktop-nav" aria-label="Primary">
+      <ul>
+        {
+          navLinks.map(({ label, href, external }) => (
+            <li>
+              <a
+                href={href}
+                aria-current={!external && isCurrent(href) ? "page" : undefined}
+                rel={external ? "noreferrer" : undefined}
+              >
+                {label}
+                {external && <span aria-hidden="true">↗</span>}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <details class="mobile-menu">
+      <summary>Menu</summary>
+      <nav aria-label="Primary">
+        <ul>
+          {
+            navLinks.map(({ label, href, external }) => (
+              <li>
+                <a
+                  href={href}
+                  aria-current={!external && isCurrent(href) ? "page" : undefined}
+                  rel={external ? "noreferrer" : undefined}
+                >
+                  {label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: relative;
+    z-index: 20;
+    border-bottom: 1px solid var(--rule);
+    background: var(--midnight);
+  }
+
+  .header-inner {
+    display: flex;
+    min-height: 4.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  ul {
+    display: flex;
+    padding: 0;
+    margin: 0;
+    gap: 0.35rem;
+    align-items: center;
+    list-style: none;
+  }
+
+  nav a,
+  summary {
+    display: inline-flex;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: var(--font-weight-control);
+    gap: 0.3rem;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  nav a:hover {
+    color: #ffffff;
+  }
+
+  nav a[aria-current="page"] {
+    border-color: var(--rule-strong);
+    color: #ffffff;
+  }
+
+  .mobile-menu {
+    display: none;
+  }
+
+  @media (max-width: 47.99rem) {
+    .desktop-nav {
+      display: none;
+    }
+
+    .mobile-menu {
+      position: relative;
+      display: block;
+    }
+
+    summary {
+      border-color: var(--rule-strong);
+      cursor: pointer;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .mobile-menu nav {
+      position: absolute;
+      top: calc(100% + 0.6rem);
+      right: 0;
+      width: min(16rem, calc(100vw - 2rem));
+      padding: var(--space-2);
+      border: 1px solid var(--rule-strong);
+      border-radius: var(--radius);
+      background: var(--midnight);
+    }
+
+    .mobile-menu ul {
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .mobile-menu a {
+      display: flex;
+      padding: 0.7rem 0.85rem;
+    }
+  }
+</style>

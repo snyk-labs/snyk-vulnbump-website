@@ -1,0 +1,243 @@
+---
+import { benchmark, firstFailedGates } from "../../data";
+import { configColors } from "../../lib/colors";
+import { formatInteger } from "../../lib/format";
+
+/*
+ * Where the agents fail (paper section 5.3). First: every failed attempt by
+ * the first verification gate it failed (Figure 4), so each failure counts
+ * once. Then: one root cause per failure, grouped by cause (Table 4).
+ */
+const { configurations, rootCauses, release, baseline } = benchmark;
+const colors = configColors(configurations);
+/** The paper's column order: the non-agent baseline first, then the agents. */
+const column = (
+  c: { id: string; label: string; flow: number[]; attempts: number; passed: number },
+  highlight: boolean,
+  isBaseline: boolean,
+) => ({ id: c.id, label: c.label, flow: c.flow, attempts: c.attempts, passed: c.passed, highlight, isBaseline });
+const columns = [
+  column(baseline, false, true),
+  ...configurations.map((c) => column(c, c.highlight, false)),
+];
+
+const gates = firstFailedGates(baseline).map(({ label }, i) => ({
+  label,
+  counts: columns.map((c) => ({ config: c, n: firstFailedGates(c)[i]!.count })),
+}));
+const max = Math.max(...gates.flatMap((g) => g.counts.map((c) => c.n)), 1);
+---
+
+<figure class="chart">
+  <ul class="chart__legend" aria-label="Configurations">
+    {
+      columns.map((c) => (
+        <li>
+          <span
+            class:list={["chart__swatch", { "swatch--baseline": c.isBaseline }]}
+            style={c.isBaseline ? undefined : `background: ${colors[c.id]}`}
+            aria-hidden="true"
+          />
+          {c.label} · {formatInteger(c.attempts - c.passed)} failures
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="chart__plot">
+    <h3 class="plot-title">Failed attempts, by first failed gate</h3>
+    <div class="reasons">
+      {
+        gates.map((gate) => (
+          <section class="reason" aria-label={gate.label}>
+            <h4>{gate.label}</h4>
+            <ul>
+              {gate.counts.map(({ config, n }) => (
+                <li aria-label={`${config.label}: ${n} of ${config.attempts - config.passed} failures`}>
+                  <span class:list={["name", { "is-highlight": config.highlight }]}>{config.label}</span>
+                  <span class="track">
+                    <span
+                      class:list={["bar", { "bar--baseline": config.isBaseline }]}
+                      style={config.isBaseline ? `--value: ${n / max}` : `--value: ${n / max}; background: ${colors[config.id]}`}
+                    />
+                    <span class="value metric">{formatInteger(n)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table class="data-table causes">
+      <caption>
+        Root cause of every failed attempt
+        <small>{rootCauses.note}</small>
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Cause</th>
+          {
+            columns.map((c) => (
+              <th scope="col" class:list={["num", { "is-highlight": c.highlight }]}>{c.label}</th>
+            ))
+          }
+        </tr>
+      </thead>
+      {
+        rootCauses.groups.map((group) => (
+          <tbody>
+            <tr class="group">
+              <th scope="row">
+                {group.label}
+                <small>{group.description}</small>
+              </th>
+              {columns.map((c) => <td class="num">{group.counts[c.id] ?? 0}</td>)}
+            </tr>
+            {group.causes.map((cause) => (
+              <tr class="cause">
+                <th scope="row">{cause.label}</th>
+                {columns.map((c) => <td class="num">{cause.counts[c.id] ?? 0}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        ))
+      }
+      <tfoot>
+        <tr>
+          <th scope="row">Failed attempts</th>
+          {columns.map((c) => <td class="num">{formatInteger(c.attempts - c.passed)}</td>)}
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>The verifier runs every gate; each failure is counted once, at the first gate it failed</span>
+    <span>Root causes are grouped by cause, not by gate: runtime version constraints surface at the rescan, compiler ones at the build</span>
+  </figcaption>
+</figure>
+
+<style>
+  .plot-title {
+    margin-bottom: var(--space-4);
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  .reasons {
+    display: grid;
+    gap: var(--space-5) var(--space-6);
+  }
+
+  .reason {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  h4 {
+    color: #ffffff;
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+
+  .reason ul {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: 0.4rem;
+    list-style: none;
+  }
+
+  .reason li {
+    display: grid;
+    gap: 0.2rem 0.75rem;
+    align-items: center;
+  }
+
+  .name {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+  }
+
+  .name.is-highlight {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .track {
+    display: flex;
+    height: 1.1rem;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 3rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.78rem;
+  }
+
+  .causes caption {
+    padding-bottom: var(--space-3);
+    color: #ffffff;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .causes caption small,
+  .causes th small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+
+  .causes thead th.is-highlight {
+    color: #ffffff;
+  }
+
+  .causes .group th,
+  .causes .group td {
+    border-top: 1px solid var(--rule-strong);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .causes .cause th {
+    padding-left: 1.4rem;
+    color: var(--ink-soft);
+    font-weight: 400;
+  }
+
+  .causes tfoot th,
+  .causes tfoot td {
+    border-top: 1px solid var(--rule-strong);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  @media (min-width: 40rem) {
+    .reason li {
+      grid-template-columns: 10rem minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 60rem) {
+    .reasons {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

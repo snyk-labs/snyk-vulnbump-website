@@ -1,0 +1,103 @@
+---
+import { benchmark } from "../../data";
+import { formatInteger, formatMacro } from "../../lib/format";
+
+/*
+ * Repository-level results (paper Table 3): macro rates average the
+ * per-repository rates, with 95% repository-level bootstrap intervals.
+ */
+const { configurations, baseline } = benchmark;
+type Macro = (typeof baseline)["macro"];
+type Column = {
+  id: string;
+  label: string;
+  highlight: boolean;
+  macro: Macro;
+  macroFixed: Macro;
+  reposAllPass: number;
+  reposNonePass: number;
+  remaining: readonly number[];
+};
+/** The paper's column order: the non-agent baseline first, then the agents. */
+const columns: Column[] = [
+  { ...baseline, highlight: false },
+  ...configurations.map((c) => ({ ...c, remaining: c.quality.remaining })),
+];
+
+const rows: { label: string; better: "higher" | "lower"; cell: (c: Column) => string }[] = [
+  { label: "All gates pass, macro [95% CI]", better: "higher", cell: (c) => formatMacro(c.macro) },
+  {
+    label: "Repositories with every upgrade passing / none passing",
+    better: "higher",
+    cell: (c) => `${c.reposAllPass} / ${c.reposNonePass}`,
+  },
+  { label: "Vulnerabilities fixed, macro [95% CI]", better: "higher", cell: (c) => formatMacro(c.macroFixed) },
+  {
+    label: "Fixable instances remaining (high / medium / low)",
+    better: "lower",
+    cell: (c) => c.remaining.slice(1).map(formatInteger).join(" / "),
+  },
+];
+---
+
+<div class="table-scroll">
+  <table class="data-table repo-level">
+    <caption>
+      Repository-level results
+      <small>
+        Macro rates average per-repository rates, so a few large repositories
+        cannot carry the result. Repositories contribute 1 to 46 upgrades.
+      </small>
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Metric</th>
+        {
+          columns.map((c) => (
+            <th scope="col" class:list={["num", { "is-highlight": c.highlight }]}>{c.label}</th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) => (
+          <tr>
+            <th scope="row">
+              {row.label}
+              <span class="visually-hidden">({row.better} is better)</span>
+              <span class="direction metric" aria-hidden="true">{row.better === "higher" ? "↑" : "↓"}</span>
+            </th>
+            {columns.map((c) => <td class="num">{row.cell(c)}</td>)}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .repo-level caption {
+    padding-bottom: var(--space-3);
+    color: #ffffff;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .repo-level caption small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+    font-weight: 400;
+  }
+
+  .repo-level thead th.is-highlight {
+    color: #ffffff;
+  }
+
+  .direction {
+    margin-left: 0.35rem;
+    color: var(--ink-faint);
+  }
+</style>

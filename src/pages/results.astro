@@ -1,0 +1,343 @@
+---
+import { GateFunnel } from "../components/charts/GateFunnel";
+import { VulnBreakdown } from "../components/charts/VulnBreakdown";
+import AdviceSplit from "../components/results/AdviceSplit.astro";
+import CostLatency from "../components/results/CostLatency.astro";
+import EcosystemComparison from "../components/results/EcosystemComparison.astro";
+import FailureComparison from "../components/results/FailureComparison.astro";
+import GateScorecard from "../components/results/GateScorecard.astro";
+import IntegrityTable from "../components/results/IntegrityTable.astro";
+import PairedComparison from "../components/results/PairedComparison.astro";
+import RepoLevelTable from "../components/results/RepoLevelTable.astro";
+import ResultSection from "../components/results/ResultSection.astro";
+import UpgradeJump from "../components/results/UpgradeJump.astro";
+import PageHero from "../components/site/PageHero.astro";
+import { benchmark } from "../data";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { formatPercent, formatRatio } from "../lib/format";
+import { indexLabel } from "../lib/words";
+
+const { configurations, flowSteps, dimensions, release, highlights, baseline } = benchmark;
+
+const funnelSeries = [
+  { id: baseline.id, label: baseline.label, highlight: false, baseline: true, flow: baseline.flow },
+  ...configurations.map(({ id, label, highlight, flow }) => ({ id, label, highlight, flow })),
+];
+const breakdownSeries = configurations.map(({ id, label, highlight, breakdowns }) => ({
+  id,
+  label,
+  highlight,
+  breakdowns,
+}));
+const bumpJumps = baseline.jumps
+  .map((j) => `${formatPercent(j.passed / j.attempts)} of ${j.label.toLowerCase()} upgrades (${j.passed}/${j.attempts})`)
+  .join(", ");
+const share = (x: { passed: number; attempts: number }) =>
+  `${formatPercent(x.passed / x.attempts)} (${formatRatio(x.passed, x.attempts)})`;
+
+const sections = [
+  { id: "head-to-head", label: "Head to head" },
+  { id: "gates", label: "Shipping gates" },
+  { id: "paired", label: "Paired" },
+  { id: "advice", label: "Beyond Snyk's advice" },
+  { id: "failures", label: "Failures" },
+  { id: "jump", label: "Version jump" },
+  { id: "ecosystems", label: "By package manager" },
+  { id: "breakdown", label: "By vulnerability" },
+  { id: "integrity", label: "Integrity" },
+  { id: "cost", label: "Cost and latency" },
+];
+const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
+---
+
+<BaseLayout
+  title="Results"
+  description={`Gate-by-gate results for the Evo Remediation Agent, Claude Code + Snyk scan, Claude Code unaided, and the package manager bump in ${release.name}.`}
+>
+  <PageHero
+    eyebrow={`${release.name} · Results`}
+    title="What got fixed, and what"
+    keyword="still shipped."
+    description="Three agents on the same model and one non-agent baseline, the same 307 upgrades, the same four gates. Every figure labels its values directly and has an equivalent table."
+  >
+    <Fragment slot="actions">
+      <a class="button" href="/data">Download data</a>
+      <a class="button secondary" href="/methodology">Methodology</a>
+    </Fragment>
+    <Fragment slot="aside">
+      <dl class="glance" aria-label="At a glance">
+        {
+          highlights.map(({ value, label, tone }) => (
+            <div class={`glance__item glance__item--${tone}`}>
+              <dt>{value}</dt>
+              <dd>{label}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </Fragment>
+  </PageHero>
+
+  <nav class="jump container" aria-label="On this page">
+    <ol>
+      {
+        sections.map(({ id, label }, i) => (
+          <li>
+            <a href={`#${id}`}>
+              <span class="metric">{indexLabel(i)}</span>
+              {label}
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </nav>
+
+  <ResultSection
+    id="head-to-head"
+    index={n("head-to-head")}
+    eyebrow="Head to head"
+    title="Four gates, one verdict"
+    description="The Evo Remediation Agent never leaves dependencies unresolvable and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code's, partly because Claude Code often does not take the upgrade. On dependencies, build and tests combined the agents are level; what separates them is whether the vulnerability is fixed. The package manager bump, which applies Snyk's recommended upgrade and nothing else, trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks."
+  >
+    <div class="stack">
+      <GateScorecard />
+      <RepoLevelTable />
+    </div>
+  </ResultSection>
+
+  <ResultSection
+    id="gates"
+    index={n("gates")}
+    eyebrow="Shipping gates"
+    title="Where attempts fall out"
+    description="Each line follows one harness's upgrades through the gates in order. Claude Code loses most at the rescan, where the vulnerability is still in place. Most of the Evo Remediation Agent's fewer failures come later, at build and test. The package manager bump loses upgrades at every gate."
+  >
+    <GateFunnel
+      client:visible
+      series={funnelSeries}
+      steps={flowSteps}
+      datasetVersion={release.datasetVersion}
+    />
+  </ResultSection>
+
+  <ResultSection
+    id="paired"
+    index={n("paired")}
+    eyebrow="Paired comparisons"
+    title="The same upgrades, the same ranking"
+    description="Matched on the same upgrades, the Evo Remediation Agent passes 46 that Claude Code + Snyk scan fails and fails 7 that it passes. The Snyk scan and target version help Claude Code on 64 upgrades and hurt it on 9. All three paired bootstrap intervals exclude zero."
+  >
+    <PairedComparison />
+  </ResultSection>
+
+  <ResultSection
+    id="advice"
+    index={n("advice")}
+    eyebrow="Beyond Snyk's advice"
+    title="The agents differ where the advice is not enough"
+    description={`The package manager bump sets the named package to Snyk's recommended version with the project's own package manager and changes nothing else. It passes ${baseline.passed} of the ${baseline.attempts} upgrades. All three agents pass 86–99% of those, but 36–82% of the other 163, which supply 34 of the Evo Remediation Agent's 39 extra PASSes over Claude Code + Snyk scan. The agents rarely break what the bump solves: the Evo Remediation Agent's only regression is a caret-range upgrade, and 24 of Claude Code's 26 leave the vulnerability in place.`}
+  >
+    <div class="stack">
+      <AdviceSplit />
+      <div class="notes prose reading-width">
+        <p>
+          <strong>Where the lead comes from.</strong> On the upgrades the bump
+          fails, the Evo Remediation Agent's lead over Claude Code + Snyk scan is
+          mostly on declared packages (87 value-add upgrades against 58). On
+          managed pins, where an agent can pass by also moving the BOM's family
+          (every Jackson artifact rather than only jackson-databind), the two are
+          close (47 and 42). Test edits, which the task allows for adapting tests
+          to breaking changes, occur in 35 of the Evo Remediation Agent's 134
+          value-add upgrades, and in 17 and 11 of Claude Code's.
+        </p>
+        <p>
+          <strong>Why the bump fails.</strong> It always reaches the recommended
+          version, but in managed builds pinning only the named package leaves the
+          BOM-managed transitive packages at their old versions: it passes
+          {" "}{share(baseline.managedPins)} of its managed pins, against
+          {" "}{share(baseline.otherPins)} of the other upgrades. Counting the 145
+          upgrades that either Python pinning policy solves lowers each agent's
+          value-add by one and leaves its regressions unchanged.
+        </p>
+      </div>
+    </div>
+  </ResultSection>
+
+  <ResultSection
+    id="failures"
+    index={n("failures")}
+    eyebrow="Where the harnesses fail"
+    title="Avoidance against breakage"
+    description="Claude Code mostly leaves the targeted vulnerability in place. The Evo Remediation Agent instead lands the upgrade and sometimes breaks the code: 21 of its 30 failures are build or test failures, mostly in major framework migrations such as Spring 5 to 6 or 7, Spring Boot 2 to 3 or 4, and Dropwizard 2 to 5. The package manager bump fails at every gate: of its 163 failures, 78 first fail at the rescan, 54 at dependency resolution and 31 at the build or tests."
+  >
+    <div class="stack">
+      <FailureComparison />
+      <div class="notes prose reading-width">
+        <p>
+          <strong>The dependency gate is decisive.</strong> One npm repository,
+          express-typescript-starter, accounts for 28 of the agents' 30
+          dependency-conflict failures and 18 of the package manager bump's 25:
+          its routing-controllers dependency declares a peer range the installed
+          version already violates, so <code>npm ci</code> rejects any regenerated
+          lockfile. Claude Code used <code>--legacy-peer-deps</code> during its
+          session without saving it; the Evo Remediation Agent wrote it to the
+          project's <code>.npmrc</code> and passes 11 of the 18 upgrades (Claude
+          Code + Snyk scan 2, Claude Code unaided 5, the bump none), so this is not
+          a fixture defect. 19 of the 30 agent attempts that failed this gate (11
+          for Claude Code + Snyk scan, 8 unaided) passed every other gate on the
+          lenient fallback install; counting them would raise Claude Code + Snyk
+          scan's PASS rate to 81.1% and Claude Code unaided's to 62.2%.
+        </p>
+        <p>
+          <strong>Only one attempt exhausted its turn budget</strong>, an Evo
+          Remediation Agent upgrade in dropwizard-pac4j. Some upgrades defeat every
+          agent: 28 of the Evo Remediation Agent's 30 failures were also failed by
+          a Claude Code agent, and all three failed 23 upgrades in seven Maven and
+          npm repositories.
+        </p>
+      </div>
+    </div>
+  </ResultSection>
+
+  <ResultSection
+    id="jump"
+    index={n("jump")}
+    eyebrow="Size of the version jump"
+    title="Major upgrades separate the agents most"
+    description={`Relative to non-major upgrades, major ones cost the Evo Remediation Agent 16 PASS points, and Claude Code + Snyk scan and Claude Code unaided 27 and 28. The package manager bump shows the same gradient more steeply, passing ${bumpJumps}. Of the Evo Remediation Agent's 277 PASSes, 59 edited application source, 49 of them on major upgrades: 52% of its 95 major PASSes, against 5% of its 182 non-major ones. Across agents, 238 of the 307 upgrades were passed by at least one agent without editing application source.`}
+  >
+    <UpgradeJump />
+  </ResultSection>
+
+  <ResultSection
+    id="ecosystems"
+    index={n("ecosystems")}
+    eyebrow="By package manager"
+    title="The Evo Remediation Agent is at or above both in every package manager"
+    description="Per-repository PASS rate in each package manager. The Evo Remediation Agent ties Claude Code + Snyk scan on pip and Yarn, with the largest gaps in Poetry, Maven and, against Claude Code + Snyk scan, npm. Some gaps come from single repositories: without express-typescript-starter, pooled npm rates are 92%, 87% and 85%, and 23 of Claude Code unaided's 28 Gradle failures come from one repository."
+  >
+    <EcosystemComparison />
+  </ResultSection>
+
+  <ResultSection
+    id="breakdown"
+    index={n("breakdown")}
+    eyebrow="By vulnerability"
+    title="Transitive vulnerabilities show the widest gap"
+    description={`Share of fixable vulnerability instances fixed by an attempt that passed every gate. Transitive instances make up 70% of the fixable ones and require reasoning about the dependency graph. Per upgrade, the package manager bump passes ${share(baseline.transitiveOnly)} of upgrades that fix only transitive vulnerabilities, against ${share(baseline.otherDependency)} of the rest. Vulnerability-heavy repositories are harder too: the Spearman correlation between a repository's baseline vulnerability count and its PASS rate is −0.57 for the Evo Remediation Agent, −0.31 for Claude Code + Snyk scan and −0.48 for Claude Code unaided.`}
+  >
+    <VulnBreakdown
+      client:visible
+      series={breakdownSeries}
+      dimensions={dimensions}
+      datasetVersion={release.datasetVersion}
+    />
+  </ResultSection>
+
+  <ResultSection
+    id="integrity"
+    index={n("integrity")}
+    eyebrow="Integrity"
+    title="What else the harness recorded"
+    description="Signals recorded alongside the gates, for the three agents. Upgrades can pull in packages with their own known vulnerabilities; PASS does not penalise them, and they appear in more Evo Remediation Agent attempts than Claude Code attempts. Rows marked in amber deserve a closer look."
+  >
+    <IntegrityTable />
+  </ResultSection>
+
+  <ResultSection
+    id="cost"
+    index={n("cost")}
+    eyebrow="Cost and latency"
+    title="The Evo Remediation Agent spends more per attempt"
+    description="The Evo Remediation Agent takes longer and costs more per attempt. Costs were measured differently: its costs are estimated from token counts at list price, and Claude Code's are what the tool reports. Read them as an order of magnitude, not a ratio."
+  >
+    <CostLatency />
+  </ResultSection>
+</BaseLayout>
+
+<style>
+  .glance {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .glance__item {
+    padding-left: var(--space-3);
+    border-left: 1px solid var(--rule-strong);
+  }
+
+  .glance__item--strong {
+    border-left-color: var(--pink);
+  }
+
+  .glance__item--contrast {
+    border-left-color: var(--amber);
+  }
+
+  .glance dt {
+    color: #ffffff;
+    font-size: var(--step-2);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .glance dd {
+    margin-top: 0.2rem;
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+    line-height: 1.4;
+  }
+
+  .jump {
+    padding-block: var(--space-4);
+  }
+
+  .jump ol {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0;
+    margin: 0;
+    gap: var(--space-2);
+    list-style: none;
+  }
+
+  .jump a {
+    display: inline-flex;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-pill);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    gap: 0.5rem;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .jump a:hover {
+    border-color: var(--pink);
+    color: #ffffff;
+  }
+
+  .jump .metric {
+    color: var(--ink-faint);
+  }
+
+  .stack {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .notes {
+    display: grid;
+    gap: var(--space-3);
+    color: var(--ink-soft);
+  }
+
+  .notes strong {
+    color: #ffffff;
+  }
+</style>

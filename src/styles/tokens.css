@@ -1,0 +1,119 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+/*
+ * VulnBump design tokens — Snyk 2026 brand, Family A (Midnight + fabric).
+ *
+ * Dark-first by brand rule: there is no white canvas and no light mode.
+ * Only the five locked brand colours, Midnight, and white/black appear here;
+ * every tint is an alpha of one of them.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Locked brand palette */
+  --midnight: #030328;
+  --plum: #2b0250;
+  --purple: #6f00dd;
+  --pink: #ff00ff;
+  --ember: #f3552e;
+  --amber: #fe9104;
+  --white: #ffffff;
+
+  /* Brand Gradient: shapes/fills keep a sliver of plum; text never does. */
+  --gradient-fill: linear-gradient(
+    90deg,
+    #2b0250 0%,
+    #6f00dd 6%,
+    #ff00ff 30%,
+    #f3552e 66%,
+    #fe9104 100%
+  );
+
+  /* Surfaces */
+  --paper: #030328;
+  --panel: rgba(255, 255, 255, 0.03);
+  --panel-strong: rgba(111, 0, 221, 0.08);
+  --panel-hover: rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --ink: #ffffff;
+  --ink-soft: rgba(255, 255, 255, 0.72);
+  --ink-faint: rgba(255, 255, 255, 0.58);
+  --inverse-text: #030328;
+
+  /* Lines */
+  --rule: rgba(255, 255, 255, 0.12);
+  --rule-strong: rgba(255, 255, 255, 0.32);
+
+  /* Interactive */
+  --action-link: #ffffff;
+  --accent: #ff00ff;
+  --focus-ring: 0 0 0 2px #030328, 0 0 0 4px #ff00ff;
+
+  /*
+   * Chart series, fixed order, assigned to entities (never by rank).
+   * Checked on Midnight: CVD and normal-vision separation pass. Purple is
+   * 2.6:1 against Midnight, so every chart keeps direct labels, surface gaps,
+   * and an exact-value table. Brand-locked hues mean the lightness-band check
+   * cannot pass; that is the trade-off for staying on palette.
+   */
+  --series-1: #ff00ff;
+  --series-2: #fe9104;
+  --series-3: #6f00dd;
+  --series-4: #f3552e;
+  --on-series-1: #030328;
+  --on-series-2: #030328;
+  --on-series-3: #ffffff;
+  --on-series-4: #030328;
+  /* The highlighted configuration is series 1; everything else is muted. */
+  --series-highlight: #ff00ff;
+  --series-muted: rgba(255, 255, 255, 0.32);
+  --series-muted-strong: rgba(255, 255, 255, 0.62);
+  /* The non-agent baseline: an outline, not a fill. */
+  --series-baseline: rgba(255, 255, 255, 0.7);
+
+  /* Sequential heatmap: one hue (Purple), five discrete bands. */
+  --heatmap-0: rgba(255, 255, 255, 0.04);
+  --heatmap-1: rgba(111, 0, 221, 0.22);
+  --heatmap-2: rgba(111, 0, 221, 0.42);
+  --heatmap-3: rgba(111, 0, 221, 0.66);
+  --heatmap-4: #6f00dd;
+  --heatmap-text: #ffffff;
+
+  /* Chart chrome */
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: rgba(255, 255, 255, 0.32);
+  --chart-surface: #030328;
+
+  /* Status (preview banner only) */
+  --warning: #fe9104;
+
+  /* Type: Geist for titles and body, Geist Mono for labels and controls. */
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-weight-control: 500;
+  --font-weight-label: 500;
+
+  --step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.86rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
+  --step-1: clamp(1.2rem, 1.1rem + 0.45vw, 1.45rem);
+  --step-2: clamp(1.5rem, 1.25rem + 1vw, 2.1rem);
+  --step-3: clamp(2rem, 1.5rem + 2vw, 3.1rem);
+  --step-4: clamp(2.6rem, 1.6rem + 4.2vw, 5.4rem);
+
+  --space-1: 0.3rem;
+  --space-2: 0.55rem;
+  --space-3: 0.85rem;
+  --space-4: 1.2rem;
+  --space-5: 1.75rem;
+  --space-6: 2.5rem;
+  --space-7: 4rem;
+  --space-8: 6.5rem;
+
+  --content: 76rem;
+  --reading: 42rem;
+  --radius: 0.75rem;
+  --radius-pill: 999px;
+}

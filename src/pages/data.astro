@@ -1,0 +1,129 @@
+---
+import PageHero from "../components/site/PageHero.astro";
+import { benchmark } from "../data";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const { release } = benchmark;
+const downloads = [
+  {
+    href: "/data/benchmark.json",
+    format: "JSON",
+    title: "Full dataset",
+    description: "Every figure and table on this site: gates, repository-level and paired results, root causes, version jumps, package managers, breakdowns, dataset selection, cost, and integrity.",
+  },
+  {
+    href: "/data/comparison.csv",
+    format: "CSV",
+    title: "Head-to-head",
+    description: "One row per agent: gate and PASS rates, macro rates with 95% intervals, gate-by-gate counts, latency, and cost.",
+  },
+  {
+    href: "/data/ecosystems.csv",
+    format: "CSV",
+    title: "By package manager",
+    description: "One row per agent and package manager, with the pooled and per-repository (macro) PASS rates.",
+  },
+  {
+    href: "/data/breakdowns.csv",
+    format: "CSV",
+    title: "By vulnerability",
+    description: "Per-vulnerability fix and pass rates by fix difficulty, dependency type, package manager, and severity.",
+  },
+];
+---
+
+<BaseLayout
+  title="Data"
+  description={`Download the versioned ${release.name} dataset.`}
+>
+  <PageHero
+    eyebrow={`${release.name} · Data`}
+    title="Take the data"
+    keyword="with you."
+    description="The files below are generated from the same validated dataset that draws every chart, so downloads and figures cannot drift apart."
+  >
+    <Fragment slot="aside">
+      <p class="eyebrow">Dataset version</p>
+      <p class="metric">{release.datasetVersion}</p>
+    </Fragment>
+  </PageHero>
+
+  <section class="section">
+    <div class="container">
+      <ul class="downloads">
+        {
+          downloads.map(({ href, format, title, description }) => (
+            <li>
+              <span class="format metric">{format}</span>
+              <div>
+                <h2>{title}</h2>
+                <p>{description}</p>
+              </div>
+              <a class="button secondary" href={href} download>
+                Download
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="license reading-width">
+        <p class="eyebrow">License</p>
+        <p>
+          Research artifacts are provided under the
+          <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>.
+          Rates are stored as fractions between 0 and 1. Figures are computed from the three harness reports and match the VulnBump paper; per-attempt records, prompts, logs, and diffs stay in the benchmark repository and are not published here. See the
+          <a href="/methodology">methodology</a> for metric definitions.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .downloads {
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--rule-strong);
+    list-style: none;
+  }
+
+  .downloads li {
+    display: grid;
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--rule);
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .format {
+    width: fit-content;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--pink);
+    border-radius: var(--radius-pill);
+    color: #ffffff;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+  }
+
+  h2 {
+    font-size: var(--step-1);
+  }
+
+  .downloads p {
+    margin-top: var(--space-1);
+    color: var(--ink-soft);
+  }
+
+  .license {
+    display: grid;
+    margin-top: var(--space-6);
+    gap: var(--space-2);
+  }
+
+  @media (min-width: 48rem) {
+    .downloads li {
+      grid-template-columns: 4rem minmax(0, 1fr) auto;
+    }
+  }
+</style>

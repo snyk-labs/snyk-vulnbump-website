@@ -1,0 +1,214 @@
+---
+import { benchmark, configById, highlighted } from "../../data";
+import { configColors } from "../../lib/colors";
+import { formatFraction, formatInteger, formatPValue, formatSignedFraction } from "../../lib/format";
+
+/*
+ * Paired comparisons (paper section 5.2). The agreement chart is an UpSet-style
+ * list: one row per combination of agents that passed an upgrade, with a dot
+ * per agent and a bar for the number of upgrades. Bars are Hot Pink where the
+ * highlighted configuration passed.
+ */
+const { configurations, paired, release } = benchmark;
+const colors = configColors(configurations);
+const total = paired.agreement.reduce((t, a) => t + a.count, 0);
+const max = Math.max(...paired.agreement.map((a) => a.count));
+
+const agreement = [...paired.agreement]
+  .sort((a, b) => b.count - a.count)
+  .map((a) => {
+    const names = a.passedBy.map((id) => configById(id).label);
+    const label =
+      a.passedBy.length === configurations.length
+        ? "All three pass"
+        : a.passedBy.length === 0
+          ? "None passes"
+          : a.passedBy.length === 1
+            ? `Only ${names[0]}`
+            : `${names.join(" and ")}`;
+    return { ...a, label, highlight: a.passedBy.includes(highlighted.id) };
+  });
+---
+
+<figure class="chart">
+  <div class="table-scroll">
+    <table class="data-table paired">
+      <caption class="visually-hidden">Paired comparisons on the same upgrades</caption>
+      <thead>
+        <tr>
+          <th scope="col">Comparison</th>
+          <th scope="col" class="num">Only first passes</th>
+          <th scope="col" class="num">Only second passes</th>
+          <th scope="col" class="num">Exact McNemar p</th>
+          <th scope="col" class="num">Macro difference [95% CI]</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          paired.comparisons.map((cmp) => (
+            <tr>
+              <th scope="row">
+                {configById(cmp.a).label} vs {configById(cmp.b).label}
+                {cmp.reposAhead !== null && cmp.reposBehind !== null && (
+                  <small>
+                    Ahead on {cmp.reposAhead} repositories, behind on {cmp.reposBehind}
+                  </small>
+                )}
+              </th>
+              <td class="num">{cmp.aOnly}</td>
+              <td class="num">{cmp.bOnly}</td>
+              <td class="num">{formatPValue(cmp.p)}</td>
+              <td class="num">
+                {formatSignedFraction(cmp.macroDiff)} [{formatFraction(cmp.ci[0])}, {formatFraction(cmp.ci[1])}]
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart__plot">
+    <h3 class="agreement__title">Who passes each upgrade</h3>
+    <div class="agreement" role="table" aria-label={`All ${total} upgrades by which agents passed them`}>
+      <div class="agreement__row agreement__head" role="row">
+        <span role="columnheader"><span class="visually-hidden">Combination</span></span>
+        {
+          configurations.map((c) => (
+            <span role="columnheader" class="agreement__agent" title={c.label}>
+              <span class="visually-hidden">{c.label}</span>
+              <span aria-hidden="true" class="metric">{c.shortLabel}</span>
+            </span>
+          ))
+        }
+        <span role="columnheader" class="agreement__count-head metric">Upgrades</span>
+      </div>
+      {
+        agreement.map((a) => (
+          <div class="agreement__row" role="row">
+            <span role="rowheader" class="agreement__label">{a.label}</span>
+            {configurations.map((c) => (
+              <span role="cell" class="agreement__cell">
+                <span
+                  class:list={["dot", { "is-on": a.passedBy.includes(c.id) }]}
+                  style={a.passedBy.includes(c.id) ? `background: ${colors[c.id]}` : undefined}
+                  aria-hidden="true"
+                />
+                <span class="visually-hidden">{a.passedBy.includes(c.id) ? "passed" : "failed"}</span>
+              </span>
+            ))}
+            <span role="cell" class="agreement__bar">
+              <span
+                class="bar"
+                style={`--value: ${a.count / max}; background: ${a.highlight ? "var(--series-highlight)" : "var(--series-muted-strong)"}`}
+                aria-hidden="true"
+              />
+              <span class="metric value">{formatInteger(a.count)}</span>
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>Agents matched on the same {total} upgrades</span>
+    <span>McNemar uses the discordant upgrades and treats them as independent; the bootstrap resamples whole repositories</span>
+    <span>Pink bars: upgrades {highlighted.label} passed</span>
+  </figcaption>
+</figure>
+
+<style>
+  .paired th small {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+
+  .agreement__title {
+    margin-bottom: var(--space-4);
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  .agreement {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .agreement__row {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr) repeat(3, 2.6rem) minmax(0, 1.4fr);
+    align-items: center;
+  }
+
+  .agreement__head {
+    color: var(--ink-faint);
+    font-size: 0.62rem;
+    text-align: center;
+  }
+
+  .agreement__count-head {
+    text-align: left;
+  }
+
+  .agreement__agent {
+    line-height: 1.2;
+  }
+
+  .agreement__label {
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .agreement__cell {
+    display: flex;
+    justify-content: center;
+  }
+
+  .dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 50%;
+  }
+
+  .dot.is-on {
+    border-color: transparent;
+  }
+
+  .agreement__bar {
+    display: flex;
+    height: 1rem;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 3rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 35rem) {
+    .agreement__row {
+      grid-template-columns: minmax(0, 1fr) repeat(3, 2.5rem) minmax(0, 0.8fr);
+      gap: 0.25rem;
+    }
+
+    .agreement__agent .metric {
+      font-size: 0.55rem;
+    }
+  }
+</style>

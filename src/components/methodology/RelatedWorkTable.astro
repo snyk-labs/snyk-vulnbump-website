@@ -1,0 +1,134 @@
+---
+import { benchmark } from "../../data";
+
+/*
+ * How VulnBump compares with dependency-upgrade and remediation benchmarks on
+ * the checks used to score an attempt (paper Table 1). Marks carry text for
+ * screen readers.
+ */
+const { relatedWork } = benchmark;
+const mark = {
+  full: { symbol: "✓", text: "Scored" },
+  partial: { symbol: "◦", text: "Partial" },
+  none: { symbol: "–", text: "Not scored" },
+} as const;
+---
+
+<div class="table-scroll">
+  <table class="data-table related">
+    <caption>
+      Benchmarks compared on the checks used to score an attempt
+      <small>✓ scored · <span class="ring ring--inline" aria-hidden="true" /> partial · – not scored</small>
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Benchmark</th>
+        <th scope="col">Package managers</th>
+        <th scope="col">Size</th>
+        <th scope="col">Task trigger</th>
+        {relatedWork.columns.map((col) => <th scope="col" class="mark">{col}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {
+        relatedWork.rows.map((row) => (
+          <tr class:list={{ "is-highlight": row.highlight }}>
+            <th scope="row">
+              {row.name}
+              {row.note && <small>{row.note}</small>}
+            </th>
+            <td class="wrap">{row.ecosystems}</td>
+            <td class="wrap">{row.size}</td>
+            <td class="wrap">{row.trigger}</td>
+            {row.marks.map((m, i) => (
+              <td class:list={["mark", `mark--${m}`]}>
+                {m === "partial" ? (
+                  <span class="ring" aria-hidden="true" />
+                ) : (
+                  <span aria-hidden="true">{mark[m].symbol}</span>
+                )}
+                <span class="visually-hidden">{relatedWork.columns[i]}: {mark[m].text}</span>
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="related-note">{relatedWork.note}</p>
+
+<style>
+  .related caption {
+    padding-bottom: var(--space-3);
+    color: #ffffff;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .related caption small,
+  .related th small {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+
+  .related td.wrap {
+    min-width: 8rem;
+    color: var(--ink-soft);
+    font-family: var(--font-sans);
+    white-space: normal;
+  }
+
+  .related .mark {
+    text-align: center;
+  }
+
+  .related td.mark {
+    font-size: 1rem;
+  }
+
+  .mark--none {
+    color: var(--ink-faint);
+  }
+
+  .ring {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 50%;
+    vertical-align: 0.05em;
+  }
+
+  .ring--inline {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-width: 1px;
+  }
+
+  .related tr.is-highlight .ring {
+    border-color: var(--pink);
+  }
+
+  .related tr.is-highlight th,
+  .related tr.is-highlight td {
+    background: var(--panel-strong);
+  }
+
+  .related tr.is-highlight th {
+    box-shadow: inset 2px 0 0 var(--pink);
+  }
+
+  .related tr.is-highlight .mark--full {
+    color: var(--pink);
+  }
+
+  .related-note {
+    margin-top: var(--space-3);
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+/*
+ * Shown while release.status is "draft" in benchmark.json (pages are also
+ * noindex). Set the status to "published" once results and copy are approved.
+ */
+---
+
+<aside class="preview-banner" aria-label="Preview notice">
+  <div class="container">
+    <span class="placeholder-tag">Draft</span>
+    <p>Results and copy are under review. Not for distribution.</p>
+  </div>
+</aside>
+
+<style>
+  .preview-banner {
+    border-bottom: 1px solid var(--rule);
+    background: var(--midnight);
+  }
+
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    align-items: center;
+    padding-block: 0.6rem;
+  }
+
+  p {
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+</style>

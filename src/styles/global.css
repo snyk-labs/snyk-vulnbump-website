@@ -1,0 +1,347 @@
+@import "./tokens.css";
+@import "./charts.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 20rem;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+a {
+  color: var(--action-link);
+  text-decoration-color: var(--pink);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  border-radius: 0.2rem;
+  outline: 0;
+  box-shadow: var(--focus-ring);
+}
+
+::selection {
+  background: rgba(255, 0, 255, 0.32);
+  color: #ffffff;
+}
+
+h1,
+h2,
+h3 {
+  margin-block: 0;
+  color: var(--ink);
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+/* Headlines: big, tight, Bold. */
+h1 {
+  font-size: var(--step-4);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+h2 {
+  font-size: var(--step-3);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+h3 {
+  font-size: var(--step-1);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+p,
+ul,
+ol,
+dl {
+  margin-block: 0;
+}
+
+dd {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+.container {
+  width: min(calc(100% - 2rem), var(--content));
+  margin-inline: auto;
+}
+
+.reading-width {
+  max-width: var(--reading);
+}
+
+.section {
+  position: relative;
+  padding-block: var(--space-7);
+}
+
+.section + .section {
+  border-top: 1px solid var(--rule);
+}
+
+/* Eyebrow: Geist Mono, uppercase, widely tracked, "//" kicker. */
+.eyebrow {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: var(--font-weight-label);
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: "// ";
+}
+
+.lede {
+  max-width: var(--reading);
+  color: var(--ink-soft);
+  font-size: var(--step-1);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.section-heading {
+  display: grid;
+  max-width: 48rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* Pill buttons in Geist Mono. Primary is solid white on Midnight. */
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.35rem;
+  border: 1px solid #ffffff;
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  color: #030328;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-control);
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.button:hover {
+  border-color: var(--pink);
+}
+
+.button.secondary {
+  border-color: var(--rule-strong);
+  background: transparent;
+  color: #ffffff;
+}
+
+.button.secondary:hover {
+  border-color: var(--pink);
+  background: var(--panel-hover);
+}
+
+.text-link {
+  display: inline-flex;
+  gap: 0.45em;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-control);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.text-link::after {
+  content: "→";
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: var(--space-3);
+  left: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  color: #030328;
+  transform: translateY(-180%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Kind / status tags */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-pill);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: var(--font-weight-label);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tag--snyk {
+  border-color: var(--pink);
+  color: #ffffff;
+}
+
+.placeholder-tag {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border: 1px dashed var(--amber);
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Thin Brand-Gradient border, drawn with real per-edge borders. */
+.gradient-border {
+  border-top: 1px solid #6f00dd;
+  border-left: 1px solid #6f00dd;
+  border-bottom: 1px solid #f3552e;
+  border-right: 1px solid #fe9104;
+  border-radius: var(--radius);
+}
+
+.prose {
+  color: var(--ink-soft);
+}
+
+.prose > * + * {
+  margin-top: var(--space-4);
+}
+
+.prose h2 {
+  margin-top: var(--space-7);
+  font-size: var(--step-2);
+}
+
+.prose h3 {
+  margin-top: var(--space-6);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25rem;
+}
+
+.prose li + li {
+  margin-top: var(--space-2);
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@media (min-width: 48rem) {
+  .container {
+    width: min(calc(100% - 5rem), var(--content));
+  }
+
+  .section {
+    padding-block: var(--space-8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

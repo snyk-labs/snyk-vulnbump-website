@@ -1,0 +1,293 @@
+---
+import { benchmark } from "../../data";
+import type { Baseline, Configuration } from "../../data/schema";
+import { configColors } from "../../lib/colors";
+import { formatMacro, formatPercent, formatRatio } from "../../lib/format";
+
+/*
+ * Head-to-head (paper Table 2): the four gates, then the outcomes built from
+ * them, one bar per configuration, best value in each row tagged (including
+ * rows a baseline wins). Static HTML: every value is printed, so it needs no
+ * interaction to read.
+ */
+const { metrics, configurations, release, baseline } = benchmark;
+const colors = configColors(configurations);
+/** The paper's column order: the non-agent baseline first, then the agents. */
+const columns: ((Configuration | Baseline) & { isBaseline: boolean; highlight: boolean })[] = [
+  { ...baseline, isBaseline: true, highlight: false },
+  ...configurations.map((c) => ({ ...c, isBaseline: false })),
+];
+const attempts = [...new Set(configurations.map((c) => c.attempts))];
+const fixable = [...new Set(configurations.map((c) => c.vulnsFixable))];
+
+/** The counts behind a rate, for the exact-values table. */
+function countsFor(key: string, c: Configuration | Baseline): string | null {
+  if (key in c.gates) return formatRatio(c.gates[key as keyof Configuration["gates"]], c.attempts);
+  if (key === "projectWorks") return formatRatio(c.green, c.attempts);
+  if (key === "allGates") return formatRatio(c.passed, c.attempts);
+  if (key === "instancesFixed") return formatRatio(c.vulnsCleared, c.vulnsFixable);
+  return null;
+}
+
+const rows = metrics.map((metric, i) => {
+  const values = columns.map((c) => c.values[metric.key] ?? 0);
+  // "Best" compares the agents only; the baseline is a reference.
+  const best = Math.max(...columns.filter((c) => !c.isBaseline).map((c) => Math.round((c.values[metric.key] ?? 0) * 1000)));
+  return {
+    metric,
+    /** The first outcome row starts a new group below the gates. */
+    opensGroup: metric.kind !== "gate" && metrics[i - 1]?.kind === "gate",
+    bars: columns.map((c, j) => ({
+      config: c,
+      value: values[j]!,
+      isBest: !c.isBaseline && Math.round(values[j]! * 1000) === best,
+    })),
+  };
+});
+---
+
+<figure class="chart scorecard-chart">
+  <ul class="chart__legend" aria-label="Configurations">
+    {
+      columns.map((c) =>
+        c.isBaseline ? (
+          <li>
+            <span class="chart__swatch swatch--baseline" aria-hidden="true" />
+            {c.label} (non-agent baseline)
+          </li>
+        ) : (
+          <li>
+            <span class="chart__swatch" style={`background: ${colors[c.id]}`} aria-hidden="true" />
+            {c.label}
+          </li>
+        ),
+      )
+    }
+  </ul>
+
+  <div class="chart__plot">
+    <div class="rows">
+      {
+        rows.map(({ metric, opensGroup, bars }) => (
+          <section
+            class:list={["row", { "row--group": opensGroup, "row--verdict": metric.kind === "verdict" }]}
+            aria-label={metric.label}
+          >
+            {opensGroup && <p class="row__group eyebrow">Outcomes</p>}
+            <div class="row__head">
+              <h3>{metric.label}</h3>
+              <p>{metric.description}</p>
+              <span class="tag">
+                % of {metric.basis === "vulnerabilities" ? "fixable instances" : "upgrades"}
+              </span>
+            </div>
+            <ul class="row__bars">
+              {bars.map(({ config, value, isBest }) => (
+                <li>
+                  <span class:list={["bar-label", { "is-highlight": config.highlight }]}>
+                    {config.label}
+                  </span>
+                  <span class="track">
+                    <span
+                      class:list={["bar", { "bar--baseline": config.isBaseline }]}
+                      style={config.isBaseline ? `--value: ${value}` : `--value: ${value}; background: ${colors[config.id]}`}
+                    />
+                    <span class="value metric">
+                      {formatPercent(value)}
+                      {isBest && <span class="best">Best</span>}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {metric.kind === "verdict" && (
+              <p class="row__note">
+                Per repository (macro) [95% CI]:
+                {columns.map((c) => (
+                  <span class="metric">{c.label} {formatMacro(c.macro)}</span>
+                ))}
+              </p>
+            )}
+          </section>
+        ))
+      }
+    </div>
+  </div>
+
+  <details class="chart__table">
+    <summary>View exact values</summary>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Metric</th>
+            {columns.map((c) => <th scope="col" class="num">{c.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map(({ metric, bars }) => (
+              <tr>
+                <th scope="row">{metric.label}</th>
+                {bars.map(({ config, value, isBest }) => (
+                  <td class="num">
+                    {formatPercent(value)}
+                    {isBest ? " (best)" : ""}
+                    <small>{countsFor(metric.key, config)}</small>
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
+          <tr>
+            <th scope="row">All gates pass, macro [95% CI]</th>
+            {columns.map((c) => <td class="num">{formatMacro(c.macro)}</td>)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>One run per harness · Claude Sonnet 5.5 for every agent</span>
+    <span>Dashed: the package manager bump, which only applies Snyk's recommended version</span>
+    <span>
+      Gate and PASS rates are out of {attempts.join(" / ")} upgrades; instances out of
+      {" "}{fixable.map((n) => n.toLocaleString("en-US")).join(" / ")}
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .rows {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .row--group {
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .row__group {
+    margin: 0;
+  }
+
+  .row__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    align-items: baseline;
+  }
+
+  h3 {
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  .row--verdict h3 {
+    font-size: var(--step-1);
+  }
+
+  .row__head p {
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  .row__note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  .row__note .metric {
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+  }
+
+  .row__bars {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: 0.4rem;
+    list-style: none;
+  }
+
+  .row__bars li {
+    display: grid;
+    gap: 0.2rem 1rem;
+    align-items: center;
+  }
+
+  .bar-label {
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .bar-label.is-highlight {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  /* Bar from zero, 4px rounded data end; value sits just past the tip. */
+  .track {
+    position: relative;
+    display: flex;
+    height: 1.25rem;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 7.5rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .row--verdict .track {
+    height: 1.5rem;
+  }
+
+  .value {
+    display: inline-flex;
+    gap: 0.45rem;
+    align-items: center;
+    color: #ffffff;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .best {
+    padding: 0 0.4rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-pill);
+    color: var(--ink-soft);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  td small {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+  }
+
+  @media (min-width: 48rem) {
+    .row__bars li {
+      grid-template-columns: 11rem minmax(0, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+import GradientText from "../brand/GradientText.astro";
+
+interface Props {
+  id: string;
+  /** Zero-padded section number, e.g. "02". */
+  index: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+}
+
+const { id, index, eyebrow, title, description } = Astro.props;
+---
+
+<section class="section" id={id} aria-labelledby={`${id}-title`}>
+  <div class="container">
+    <div class="head">
+      <span class="numeral" aria-hidden="true">
+        <GradientText text={index} id={`section-${id}`} layout="inline" />
+      </span>
+      <div class="section-heading">
+        <p class="eyebrow">{eyebrow}</p>
+        <h2 id={`${id}-title`}>{title}</h2>
+        <p class="lede">{description}</p>
+      </div>
+    </div>
+    <slot />
+  </div>
+</section>
+
+<style>
+  section {
+    scroll-margin-top: var(--space-4);
+  }
+
+  .head {
+    display: grid;
+    gap: var(--space-3) var(--space-5);
+  }
+
+  .numeral {
+    font-size: var(--step-3);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  @media (min-width: 56rem) {
+    .head {
+      grid-template-columns: 5rem minmax(0, 1fr);
+    }
+  }
+</style>

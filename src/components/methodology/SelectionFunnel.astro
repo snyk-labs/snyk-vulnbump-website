@@ -1,0 +1,175 @@
+---
+import { benchmark, ecosystemLabel } from "../../data";
+import { formatInteger } from "../../lib/format";
+
+/*
+ * Dataset selection (paper Figure 1): the deduplicated candidates by source,
+ * then each filter in order with the repositories it kept and dropped, ending
+ * at the selected repositories split by package manager.
+ */
+const { selection, configurations, release } = benchmark;
+const { funnel, sources } = selection;
+const max = funnel[0]!.count;
+const reference = configurations.find((c) => c.highlight) ?? configurations[0]!;
+const finalSplit = [...reference.ecosystems].sort((a, b) => b.repos - a.repos);
+---
+
+<figure class="chart">
+  <div class="chart__plot">
+    <h3 class="plot-title">From {formatInteger(max)} candidates to {funnel.at(-1)!.count} repositories</h3>
+
+    <p class="eyebrow">Sources</p>
+    <ul class="sources" aria-label="Candidate sources">
+      {
+        sources.map((s) => (
+          <li>
+            <span class="label">{s.label}</span>
+            <span class="track">
+              <span class="bar bar--source" style={`--value: ${s.count / max}`} aria-hidden="true" />
+              <span class="value metric">{formatInteger(s.count)}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="eyebrow">Filters</p>
+    <ol class="stages" aria-label="Filters, in order">
+      {
+        funnel.map((step, i) => {
+          const previous = funnel[i - 1];
+          const dropped = previous ? previous.count - step.count : 0;
+          const last = i === funnel.length - 1;
+          return (
+            <li class:list={{ "is-last": last }}>
+              <span class="label">{step.label}</span>
+              <span class="track">
+                <span
+                  class:list={["bar", { "bar--final": last }]}
+                  style={`--value: ${step.count / max}`}
+                  aria-hidden="true"
+                />
+                <span class="value metric">{formatInteger(step.count)}</span>
+              </span>
+              <span class="drop metric">
+                {step.dropLabel ? `−${formatInteger(dropped)} ${step.dropLabel.toLowerCase()}` : ""}
+              </span>
+            </li>
+          );
+        })
+      }
+    </ol>
+
+    <p class="eyebrow">Selected, by package manager</p>
+    <ul class="split" aria-label="Selected repositories by package manager">
+      {
+        finalSplit.map((e) => (
+          <li>
+            <span class="metric">{e.repos}</span> {ecosystemLabel(e.id)}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>
+      {formatInteger(selection.collected)} candidates collected from {formatInteger(selection.collectedRepos)} repositories;
+      keeping the most vulnerable commit per repository leaves {formatInteger(selection.candidates)}
+    </span>
+    <span>Each candidate drops out at the first filter it fails</span>
+  </figcaption>
+</figure>
+
+<style>
+  .plot-title {
+    margin-bottom: var(--space-4);
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  .eyebrow {
+    margin: var(--space-4) 0 var(--space-2);
+  }
+
+  .sources,
+  .stages,
+  .split {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: 0.45rem;
+    list-style: none;
+  }
+
+  .sources li,
+  .stages li {
+    display: grid;
+    gap: 0.15rem 1rem;
+    align-items: center;
+  }
+
+  .label {
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .stages .is-last .label {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .track {
+    display: flex;
+    height: 1.1rem;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 3.5rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--series-muted-strong);
+  }
+
+  .bar--source {
+    background: var(--series-muted);
+  }
+
+  .bar--final {
+    background: var(--series-highlight);
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.78rem;
+  }
+
+  .drop {
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+  }
+
+  .split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .split .metric {
+    color: #ffffff;
+  }
+
+  @media (min-width: 48rem) {
+    .sources li,
+    .stages li {
+      grid-template-columns: 15rem minmax(0, 1fr) 11rem;
+    }
+  }
+</style>

@@ -1,0 +1,229 @@
+---
+import { benchmark, configById } from "../../data";
+import { configColors } from "../../lib/colors";
+import { formatInteger, formatMacro, formatPercent, formatPValue, formatRatio } from "../../lib/format";
+
+/*
+ * Agents paired with the package manager bump (paper Table 4). The upgrades
+ * the bump passes are Snyk-advice-solvable; on those an agent can only keep
+ * or lose an easy fix (regressions). On the rest it must add something the
+ * advice alone does not (value-add).
+ */
+const { adviceSplit, configurations, baseline, release } = benchmark;
+const colors = configColors(configurations);
+const agents = adviceSplit.agents.map((a) => ({ ...a, config: configById(a.id) }));
+
+const panels = [
+  {
+    id: "solvable",
+    title: "Snyk-advice-solvable",
+    note: `The ${adviceSplit.solvable} upgrades the ${baseline.label.toLowerCase()} passes. Here an agent can only keep or lose an easy fix.`,
+    total: adviceSplit.solvable,
+    pick: (a: (typeof agents)[number]) => ({ passed: a.solvablePassed, macro: a.solvableMacro }),
+  },
+  {
+    id: "other",
+    title: "Other upgrades",
+    note: `The ${adviceSplit.other} upgrades it fails. Here an agent must add something the advice alone does not.`,
+    total: adviceSplit.other,
+    pick: (a: (typeof agents)[number]) => ({ passed: a.otherPassed, macro: a.otherMacro }),
+  },
+];
+
+const rows: {
+  label: string;
+  better?: "higher" | "lower";
+  sub?: boolean;
+  cell: (a: (typeof agents)[number]) => string;
+}[] = [
+  { label: "Regressions (the bump passes, the agent fails)", better: "lower", cell: (a) => formatInteger(a.regressions) },
+  { label: "Value-add (the agent passes, the bump fails)", better: "higher", cell: (a) => formatInteger(a.valueAdd) },
+  { label: "with test edits", sub: true, cell: (a) => formatInteger(a.valueAddTestEdits) },
+  { label: "on managed pins", sub: true, cell: (a) => formatInteger(a.valueAddManagedPins) },
+  { label: "Exact McNemar p, value-add against regressions", cell: (a) => formatPValue(a.p) },
+];
+---
+
+<figure class="chart">
+  <ul class="chart__legend" aria-label="Agents">
+    {
+      agents.map(({ config }) => (
+        <li>
+          <span class="chart__swatch" style={`background: ${colors[config.id]}`} aria-hidden="true" />
+          {config.label}
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="panels">
+    {
+      panels.map((panel) => (
+        <section class="chart__plot panel" aria-labelledby={`split-${panel.id}`}>
+          <h3 id={`split-${panel.id}`}>
+            {panel.title}
+            <span class="metric">{panel.total} upgrades</span>
+          </h3>
+          <p class="note">{panel.note}</p>
+          <ul class="bars">
+            {agents.map((a) => {
+              const { passed, macro } = panel.pick(a);
+              const rate = passed / panel.total;
+              return (
+                <li aria-label={`${a.config.label}: ${formatPercent(rate)}, ${formatRatio(passed, panel.total)}`}>
+                  <span class:list={["name", { "is-highlight": a.config.highlight }]}>{a.config.label}</span>
+                  <span class="track">
+                    <span class="bar" style={`--value: ${rate}; background: ${colors[a.config.id]}`} />
+                    <span class="value metric">{formatPercent(rate)}</span>
+                  </span>
+                  <span class="detail metric">
+                    {formatRatio(passed, panel.total)} · macro {formatMacro(macro)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+
+  <div class="table-scroll">
+    <table class="data-table split">
+      <caption class="visually-hidden">Regressions and value-add against the package manager bump</caption>
+      <thead>
+        <tr>
+          <th scope="col">Against the {baseline.label.toLowerCase()}</th>
+          {agents.map(({ config }) => <th scope="col" class:list={["num", { "is-highlight": config.highlight }]}>{config.label}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((row) => (
+            <tr class:list={{ sub: row.sub }}>
+              <th scope="row">
+                {row.label}
+                {row.better && (
+                  <>
+                    <span class="visually-hidden">({row.better} is better)</span>
+                    <span class="direction metric" aria-hidden="true">{row.better === "higher" ? "↑" : "↓"}</span>
+                  </>
+                )}
+              </th>
+              {agents.map((a) => <td class="num">{row.cell(a)}</td>)}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>The split is a lower bound on what mechanical upgrading can solve, so value-add is an upper bound on what an agent adds</span>
+    <span>Managed pins override a version set by a Maven parent or BOM, or by Spring's dependency management</span>
+    <span>Brackets: 95% repository-level bootstrap intervals</span>
+  </figcaption>
+</figure>
+
+<style>
+  .panels {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .panel {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+  }
+
+  h3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: baseline;
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  h3 .metric {
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    font-weight: 400;
+  }
+
+  .note {
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  .bars {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  .bars li {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .name {
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .name.is-highlight {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .track {
+    display: flex;
+    height: 1.1rem;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 3.75rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.78rem;
+  }
+
+  .detail {
+    color: var(--ink-faint);
+    font-size: 0.68rem;
+  }
+
+  .split thead th.is-highlight {
+    color: #ffffff;
+  }
+
+  .split tr.sub th {
+    padding-left: 1.4rem;
+    color: var(--ink-soft);
+    font-weight: 400;
+  }
+
+  .direction {
+    margin-left: 0.35rem;
+    color: var(--ink-faint);
+  }
+
+  @media (min-width: 60rem) {
+    .panels {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

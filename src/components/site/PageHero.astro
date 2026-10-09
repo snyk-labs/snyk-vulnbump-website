@@ -1,0 +1,74 @@
+---
+import GradientText from "../brand/GradientText.astro";
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  /** Optional Brand-Gradient keyword set on its own line after the title. */
+  keyword?: string;
+  description: string;
+}
+
+const { eyebrow, title, keyword, description } = Astro.props;
+---
+
+<header class="page-hero">
+  <div class="container page-hero__inner">
+    <div class="copy">
+      <p class="eyebrow">{eyebrow}</p>
+      <h1>
+        {title}
+        {keyword && <GradientText text={keyword} id="page-hero" />}
+      </h1>
+      <p class="lede">{description}</p>
+      <div class="actions">
+        <slot name="actions" />
+      </div>
+    </div>
+    <aside>
+      <slot name="aside" />
+    </aside>
+  </div>
+</header>
+
+<style>
+  .page-hero {
+    padding-block: var(--space-7) var(--space-6);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .page-hero__inner {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .copy {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+  }
+
+  h1 {
+    max-width: 16ch;
+    font-size: clamp(2.4rem, 1.6rem + 3.6vw, 4.6rem);
+  }
+
+  .actions {
+    display: flex;
+    margin-top: var(--space-2);
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .actions:empty,
+  aside:empty {
+    display: none;
+  }
+
+  @media (min-width: 60rem) {
+    .page-hero__inner {
+      grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.6fr);
+      align-items: end;
+    }
+  }
+</style>

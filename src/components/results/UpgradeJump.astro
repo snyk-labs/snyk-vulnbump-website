@@ -1,0 +1,186 @@
+---
+import { benchmark } from "../../data";
+import { configColors } from "../../lib/colors";
+import { formatPercent, formatRatio, formatWholePercent } from "../../lib/format";
+
+/*
+ * Share of upgrades passing every gate by the size of the recommended version
+ * jump (paper Figure 5), one bar per configuration. Minor jumps below 1.0 are
+ * kept apart because semantic versioning gives no guarantee there.
+ */
+const { jumpCategories, configurations, release } = benchmark;
+const colors = configColors(configurations);
+
+const groups = jumpCategories.map((category) => ({
+  category,
+  attempts: configurations[0]!.jumps.find((j) => j.id === category.id)!.attempts,
+  results: configurations.map((c) => {
+    const j = c.jumps.find((x) => x.id === category.id)!;
+    return { config: c, passed: j.passed, attempts: j.attempts, rate: j.passed / j.attempts };
+  }),
+}));
+---
+
+<figure class="chart">
+  <ul class="chart__legend" aria-label="Configurations">
+    {
+      configurations.map((c) => (
+        <li>
+          <span class="chart__swatch" style={`background: ${colors[c.id]}`} aria-hidden="true" />
+          {c.label}
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="chart__plot">
+    <div class="groups">
+      {
+        groups.map(({ category, attempts, results }) => (
+          <section class="group" aria-label={`${category.label} upgrades`}>
+            <h3>
+              {category.label}
+              <span class="metric">{attempts} upgrades</span>
+            </h3>
+            <ul class="bars">
+              {results.map(({ config, passed, attempts: n, rate }) => (
+                <li aria-label={`${config.label}: ${formatWholePercent(rate)}, ${formatRatio(passed, n)}`}>
+                  <span class="track">
+                    <span class="bar" style={`--value: ${rate}; background: ${colors[config.id]}`} />
+                    <span class="value metric">{formatWholePercent(rate)}</span>
+                  </span>
+                  <span class:list={["n metric", { "is-highlight": config.highlight }]}>
+                    {config.label} · {formatRatio(passed, n)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {category.note && <p class="note">{category.note}</p>}
+          </section>
+        ))
+      }
+    </div>
+  </div>
+
+  <details class="chart__table">
+    <summary>View exact values</summary>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Recommended jump</th>
+            <th scope="col" class="num">Upgrades</th>
+            {configurations.map((c) => <th scope="col" class="num">{c.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {
+            groups.map(({ category, attempts, results }) => (
+              <tr>
+                <th scope="row">{category.label}</th>
+                <td class="num">{attempts}</td>
+                {results.map(({ passed, rate }) => (
+                  <td class="num">
+                    {formatPercent(rate)} ({passed})
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <figcaption class="chart__caption">
+    <span>Dataset {release.datasetVersion}</span>
+    <span>Share of upgrades passing every gate, by the jump of the recommended upgrade</span>
+    <span>Not the smallest fixing jump used in the per-vulnerability breakdown</span>
+  </figcaption>
+</figure>
+
+<style>
+  .groups {
+    display: grid;
+    gap: var(--space-5) var(--space-6);
+  }
+
+  .group {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+  }
+
+  h3 {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  h3 .metric {
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    font-weight: 400;
+  }
+
+  .note {
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  .bars {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: 0.5rem;
+    list-style: none;
+  }
+
+  .bars li {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .track {
+    display: flex;
+    height: 1.1rem;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .bar {
+    display: block;
+    width: calc((100% - 3.5rem) * var(--value));
+    min-width: 2px;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .value {
+    color: #ffffff;
+    font-size: 0.78rem;
+  }
+
+  .n {
+    color: var(--ink-faint);
+    font-size: 0.68rem;
+  }
+
+  .n.is-highlight {
+    color: var(--ink-soft);
+  }
+
+  @media (min-width: 48rem) {
+    .groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .groups {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>

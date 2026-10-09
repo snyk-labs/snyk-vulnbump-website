@@ -1,0 +1,41 @@
+---
+import ClosingStatement from "../components/home/ClosingStatement.astro";
+import FindingsIndex from "../components/home/FindingsIndex.astro";
+import GatesSection from "../components/home/GatesSection.astro";
+import Hero from "../components/home/Hero.astro";
+import MethodPipeline from "../components/home/MethodPipeline.astro";
+import GateScorecard from "../components/results/GateScorecard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout>
+  <Hero />
+  <GatesSection />
+
+  <section class="section" aria-labelledby="h2h-title">
+    <div class="container">
+      <div class="section-heading">
+        <p class="eyebrow">Head to head</p>
+        <h2 id="h2h-title">Four gates, one verdict.</h2>
+        <p class="lede">
+          Claude Code keeps builds and tests green slightly more often. The Evo
+          Remediation Agent clears far more of the vulnerabilities it targets, so
+          far more of its upgrades pass every gate. Applying only Snyk's
+          recommended version trails every agent on every gate.
+        </p>
+      </div>
+      <GateScorecard />
+      <a class="text-link all-results" href="/results">All results</a>
+    </div>
+  </section>
+
+  <FindingsIndex />
+  <MethodPipeline />
+  <ClosingStatement />
+</BaseLayout>
+
+<style>
+  .all-results {
+    margin-top: var(--space-5);
+  }
+</style>

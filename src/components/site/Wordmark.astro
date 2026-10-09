@@ -1,0 +1,57 @@
+---
+import { benchmark, site } from "../../data";
+---
+
+<a class="wordmark" href="/" aria-label={`${site.shortName} home`}>
+  <!-- The bump: a stepped line rising to an arrow, in the Brand Gradient. -->
+  <svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="mark-grad" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stop-color="#6F00DD"></stop>
+        <stop offset="45%" stop-color="#FF00FF"></stop>
+        <stop offset="75%" stop-color="#F3552E"></stop>
+        <stop offset="100%" stop-color="#FE9104"></stop>
+      </linearGradient>
+    </defs>
+    <rect x="1" y="1" width="30" height="30" rx="9" fill="none" stroke="rgba(255,255,255,0.18)"></rect>
+    <path
+      d="M8 23 H13 V17 H18 V11 H23 M19 7 L23 11 L19 15"
+      fill="none"
+      stroke="url(#mark-grad)"
+      stroke-width="2.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </svg>
+  <span class="name">{site.shortName}</span>
+  <span class="version metric">{benchmark.release.shortName}</span>
+</a>
+
+<style>
+  .wordmark {
+    display: inline-flex;
+    gap: 0.6rem;
+    align-items: center;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .mark {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+  }
+
+  .name {
+    font-size: 1.12rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .version {
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-pill);
+    color: var(--ink-soft);
+    font-size: 0.68rem;
+  }
+</style>

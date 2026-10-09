@@ -1,0 +1,668 @@
+---
+import ProductionComparison from "../components/methodology/ProductionComparison.astro";
+import RelatedWorkTable from "../components/methodology/RelatedWorkTable.astro";
+import SelectionFunnel from "../components/methodology/SelectionFunnel.astro";
+import PageHero from "../components/site/PageHero.astro";
+import { benchmark, bump, ecosystemLabel, highlighted, site } from "../data";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { formatInteger } from "../lib/format";
+
+const {
+  release,
+  configurations,
+  metrics,
+  methodology,
+  model,
+  budgets,
+  pricing,
+  production,
+  selection,
+  representativeness,
+  paper,
+} = benchmark;
+const generatedAt = (iso: string) => `${iso.replace("T", " ").slice(0, 16)} UTC`;
+const repoCounts = highlighted.ecosystems.map((e) => e.repos);
+const { qualifying, composition } = selection;
+const qualifyingSplit = Object.entries(qualifying.byEcosystem)
+  .map(([id, n]) => `${n} ${ecosystemLabel(id)}`)
+  .join(", ");
+const languages = composition.byLanguage.map((l) => `${l.count} ${l.label}`).join(", ");
+const millions = (n: number) => `${Math.round(n / 1e6)} million`;
+const bumpRunDate = new Date(`${bump.runDate}T00:00:00Z`).toLocaleDateString("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+const paperDate = new Date(`${paper.date}T00:00:00Z`).toLocaleDateString("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+---
+
+<BaseLayout
+  title="Methodology"
+  description={`How ${release.name} chose its repositories, runs each upgrade, and verifies it through four gates.`}
+>
+  <PageHero
+    eyebrow={`${release.name} · Methodology`}
+    title="How every bump"
+    keyword="gets judged."
+    description={`${benchmark.studyLabel}. The definitions and limitations here apply to every chart on the site, and follow the VulnBump paper.`}
+  >
+    <Fragment slot="aside">
+      <p class="eyebrow">Run</p>
+      <p class="metric">{model.name} · {model.provider}</p>
+      <p class="metric">Claude Code {model.claudeCodeVersion}</p>
+      <p class="metric">Dataset {release.datasetVersion}</p>
+    </Fragment>
+  </PageHero>
+
+  <section class="section">
+    <div class="container prose reading-width">
+      <h2>Research question</h2>
+      <p class="lede">{benchmark.researchQuestion}</p>
+      <p>
+        Software composition analysis tools report far more vulnerable
+        dependencies than teams fix. In Snyk Open Source production data from
+        {" "}{production.period}, {production.fixedVersionShare.toFixed(1)}% of
+        findings have a known fixed version and {production.fixPathShare.toFixed(1)}%
+        a fix path within the project, yet {production.openShare}% are still open
+        and only about {production.resolvedShare}% are resolved. The bottleneck is
+        upgrading safely: an upgrade that removes the vulnerability but breaks the
+        build or tests is not a fix.
+      </p>
+      <p>{benchmark.summary}</p>
+
+      <h2>How VulnBump compares</h2>
+      <p>
+        A remediation benchmark needs real repositories with working builds and
+        test suites, tasks driven by real vulnerability findings with known fix
+        paths, and verification that does not trust the agent's report. Existing
+        benchmarks cover at most two: breaking-update benchmarks are not driven by
+        vulnerabilities, so they cannot observe an agent that leaves the
+        vulnerability in place, CVE fix-commit corpora lack runnable downstream
+        projects, and CORAL scores against its own CVE-to-version mapping rather
+        than a production scan.
+      </p>
+    </div>
+    <div class="container wide">
+      <RelatedWorkTable />
+    </div>
+
+    <div class="container prose reading-width">
+      <h2>The dataset</h2>
+      <h3>Grounded in production data</h3>
+      <p>
+        The target distributions come from Snyk Open Source findings in monitored
+        projects from {production.period}: about
+        {" "}{formatInteger(production.organisations)} organisations and
+        {" "}{millions(production.issueProjectPairs)} unique issue–project pairs. A
+        vulnerability present in 1,000 projects counts 1,000 times, because each
+        project is a separate remediation task. Java, JavaScript and Python
+        account for almost 95% of findings, and Maven, Gradle, npm, Yarn, pip and
+        Poetry cover about 92% of all pairs, so VulnBump targets these six.
+      </p>
+
+      <h3>Candidates</h3>
+      <p>
+        Candidates come from {selection.sources.length} sources, which together
+        cover all six package managers:
+      </p>
+      <ul>
+        {
+          selection.sources.map((s) => (
+            <li>
+              <strong>{s.label} ({formatInteger(s.count)}).</strong> {s.description}
+            </li>
+          ))
+        }
+      </ul>
+      <p>
+        Each candidate is scanned with <code>snyk test --json</code> using the
+        ecosystem-appropriate invocation. Collection produced
+        {" "}{formatInteger(selection.collected)} candidates from
+        {" "}{formatInteger(selection.collectedRepos)} repositories; keeping the most
+        vulnerable commit per repository leaves {formatInteger(selection.candidates)}.
+      </p>
+
+      <h3>Filtering for reproducible, well-tested projects</h3>
+      <p>
+        Every candidate was run from a clean checkout in a per-ecosystem Docker
+        image (Maven and Gradle on JDK 17, Node 20, Python 3.11), with a 30-minute
+        limit per step, and had to pass five filters in order. The largest drop is
+        at the third: many projects have no tests that run in a clean environment,
+        and most pip projects need external services such as Postgres or Redis to
+        run theirs. This leaves {qualifying.candidates} qualifying candidates from
+        {" "}{qualifying.repos} repositories ({qualifyingSplit}).
+      </p>
+    </div>
+    <div class="container wide">
+      <SelectionFunnel />
+    </div>
+
+    <div class="container prose reading-width">
+      <h3>Selection and final composition</h3>
+      <p>
+        {selection.selectionNote} The dataset comprises
+        {" "}{highlighted.ecosystems.map((e) => `${e.repos} ${ecosystemLabel(e.id)}`).join(", ")}
+        {" "}repositories ({languages}), with a median of {composition.medianVulns}
+        {" "}unique vulnerabilities (range {composition.vulnRange[0]}–{composition.vulnRange[1]})
+        and {composition.medianTests} tests; {composition.popular} have at least
+        1,000 GitHub stars.
+      </p>
+      <p>{selection.excludedReason}</p>
+
+      <h3>Against production</h3>
+      <p>
+        The dataset matches production within a few points on package-manager
+        share, severity, fix difficulty and direct share for Maven, npm, Yarn and
+        Poetry. Vulnerabilities per project span a similar range for Java and
+        JavaScript, while the Python repositories cluster around a higher median.
+        There are two deviations:
+      </p>
+      <ul>
+        {representativeness.deviations.map((d) => <li>{d}</li>)}
+      </ul>
+    </div>
+    <div class="container wide">
+      <ProductionComparison />
+    </div>
+
+    <div class="container prose reading-width">
+      <h2>The task</h2>
+      <p>
+        Each task asks an agent to apply one package upgrade (or pin) recommended
+        by a baseline Snyk scan (<code>snyk test --all-projects --ignore-policy</code>)
+        of the installed, pinned repository. Snyk groups the vulnerabilities it
+        can fix into fix groups: one upgrade or pin in one manifest, with the
+        vulnerabilities it fixes. Vulnerabilities without a fix path are never
+        counted against an agent.
+      </p>
+      <dl class="definitions">
+        <div>
+          <dt>Upgrade</dt>
+          <dd>
+            A VulnBump task: one fix group of a pinned repository. A repository
+            with 50 fixable vulnerabilities that require upgrading 20 packages
+            yields 20 upgrades.
+          </dd>
+        </div>
+        <div>
+          <dt>Fixable vulnerability instance</dt>
+          <dd>
+            A (manifest, vulnerability id) pair in the baseline scan for which the
+            scan offers an upgrade or pin. An instance reachable through several
+            upgrades counts as fixed only if every covering upgrade fixed its own
+            path.
+          </dd>
+        </div>
+      </dl>
+      <p>
+        An abridged baseline scan for one VulnBump repository (expressjs/generator)
+        shows seven vulnerabilities across four upgrades. The minimist
+        vulnerability is reachable through both the minimist and mkdirp upgrades,
+        so it counts as fixed only if both fix their paths:
+      </p>
+      <pre class="listing"><code>Tested 9 dependencies for known issues, found 7 issues, 8 vulnerable paths.
+
+Issues to fix by upgrading:
+
+  Upgrade ejs@2.6.2 to ejs@3.1.10 to fix
+  ✗ Improper Control of Dynamically-Managed Code Resources [Medium][SNYK-JS-EJS-6689533]
+  ✗ Remote Code Execution (RCE) [High][SNYK-JS-EJS-2803307]
+
+  Upgrade minimatch@3.0.4 to minimatch@3.1.3 to fix
+  ✗ Regular Expression Denial of Service (ReDoS) [Medium][SNYK-JS-MINIMATCH-3050818]
+  ✗ Regular Expression Denial of Service (ReDoS) [High][SNYK-JS-MINIMATCH-15309438]
+  ✗ Inefficient Algorithmic Complexity [High][SNYK-JS-MINIMATCH-15353389]
+
+  Upgrade minimist@1.2.5 to minimist@1.2.6 to fix
+  ✗ Prototype Pollution [Low][SNYK-JS-MINIMIST-2429795]
+
+  Upgrade mkdirp@0.5.1 to mkdirp@0.5.5 to fix
+  ✗ Prototype Pollution [Low][SNYK-JS-MINIMIST-2429795]
+  ✗ Prototype Pollution [Medium][SNYK-JS-MINIMIST-559764]
+    introduced by mkdirp@0.5.1 &gt; minimist@0.0.8</code></pre>
+      <p>
+        Each upgrade is attempted from a fresh copy of the pinned repository and
+        scored on its own (single-upgrade mode), so one upgrade's failure cannot
+        affect another.
+      </p>
+
+      <h2>Pipeline</h2>
+      <ol class="phases">
+        {
+          methodology.map(({ title, when, text, steps }) => (
+            <li>
+              <strong>{title}</strong> <span class="metric when">{when}</span>
+              <p>{text}</p>
+              <ul>
+                {steps.map((step) => <li>{step}</li>)}
+              </ul>
+            </li>
+          ))
+        }
+      </ol>
+
+      <h2>Harnesses</h2>
+      <h3>The package manager bump</h3>
+      <p>
+        The non-agent baseline applies Snyk's recommended upgrade and nothing
+        else: it uses no model, edits no code or tests, and never tries another
+        version. It sets the named package's version with the ecosystem's own
+        mechanism (<code>npm install pkg@ver</code>, <code>yarn add</code>,
+        <code>poetry add</code>, or the version in <code>requirements.txt</code>,
+        <code>pom.xml</code> or the Gradle build), and pins an undeclared package
+        the same way, for example with an explicit Maven <code>&lt;version&gt;</code>
+        or a Gradle constraints entry. A pin is <em>managed</em> when it overrides
+        a version set by a Maven parent or BOM or by Spring's
+        dependency-management plugin. If the lockfile refresh fails, so does the
+        dependency gate; the only fallback is retrying npm with
+        <code>--legacy-peer-deps</code>. Python packages are pinned exactly
+        (<code>==</code>); pinning with <code>&gt;=</code> changes the outcome of 2
+        of the 60 Python upgrades and leaves the total unchanged. It ran on
+        {" "}{bumpRunDate} on the same pinned repositories.
+      </p>
+
+      <h3>The agents</h3>
+      <p>
+        All three agents use the same model ({model.id} on {model.provider}) and
+        the same per-ecosystem container image. They differ in harness, prompt,
+        tools and Snyk information, so VulnBump compares complete systems, as a
+        user would get them, rather than ablating one component.
+        {" "}{budgets.turns}
+      </p>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Agent</th>
+              <th scope="col">Harness revision</th>
+              <th scope="col">Snyk CLI build</th>
+              <th scope="col">Report generated</th>
+              <th scope="col" class="num">Upgrades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              configurations.map((c) => (
+                <tr>
+                  <th scope="row">
+                    {c.label}
+                    <small>{c.description}</small>
+                  </th>
+                  <td>{c.run.harnessRevision}</td>
+                  <td>{c.run.cliBuild}</td>
+                  <td>{generatedAt(c.run.generatedAt)}</td>
+                  <td class="num">{formatInteger(c.attempts)}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The Evo Remediation Agent is Snyk's agentic remediation engine, available
+        through the Snyk CLI and a cloud service. It is invoked once per upgrade as
+        {" "}<code>snyk fix --agentic --sca --auto-approve --prepare-env --issue-ids &lt;ids&gt;</code>.
+        It leverages Snyk intelligence, which evolved from Snyk's deterministic SCA
+        fix engine for pull requests, and works from the same Snyk findings as
+        Claude Code + Snyk scan. It runs its own scan, the build and tests, and
+        repairs errors before finishing.
+      </p>
+
+      <h2>Sandbox and leakage controls</h2>
+      <p>
+        The agent runs in a container modelled on the Evo Remediation Agent's
+        production sandbox: a non-root user, a read-only root filesystem,
+        <code>HOME=/tmp</code>, only the repository, <code>/out</code> and
+        <code>/tmp</code> writable, and 24 GB of memory. Package registries are
+        reachable. Claude Code runs headless with its standard tools, including web
+        fetch and web search; the Evo Remediation Agent has its own tools to read,
+        edit and run commands, and no web tool. Three controls limit leakage of the
+        eventual fix:
+      </p>
+      <ul>
+        <li>
+          <strong>No history.</strong> Each repository is a depth-1 clone of the
+          pinned commit, with no remote, refs or tags.
+        </li>
+        <li>
+          <strong>No GitHub.</strong> GitHub and mirrors that serve repository
+          files at arbitrary refs resolve to an unreachable address, and Claude
+          Code has matching fetch deny rules and no <code>gh</code> CLI. Two
+          repositories whose setup fetches from GitHub are exempt from the host
+          block.
+        </li>
+        <li>
+          <strong>No Snyk for Claude Code unaided.</strong> It gets no Snyk CLI or
+          token: Snyk's hosts are blocked and Snyk advisory links are removed from
+          its prompt.
+        </li>
+      </ul>
+      <p>
+        The rest of the web, including changelogs and migration guides hosted
+        outside GitHub, stays open; release notes hosted on GitHub are blocked
+        with the rest of GitHub.
+      </p>
+
+      <h2>Verification</h2>
+      <p>
+        The verifier never trusts the agent's report. After the agent exits, it
+        runs in a fresh container over the agent's working tree, as root with
+        fresh caches and output directory, so nothing the agent left outside the
+        repository can affect the verdict. It runs four gates in order, always
+        runs every gate, and records every failure. Before any attempt is scored,
+        each repository's untouched baseline must install, scan, build and run at
+        least one passing test.
+      </p>
+      <ol>
+        <li>
+          <strong>{metrics.find((m) => m.key === "depsResolve")?.label}.</strong> The
+          edited manifests and lockfiles install with the package manager's strict
+          command, as CI would run it: <code>mvn dependency:resolve</code>,
+          <code>npm ci</code>, <code>yarn install --frozen-lockfile</code>,
+          <code>poetry install</code>, or <code>pip install -r requirements.txt</code>
+          plus the project. Workarounds applied only during the agent's session do
+          not count. Three npm repositories without a committed lockfile fall back
+          to <code>npm install</code>. Gradle resolves dependencies during the
+          build, so its resolution failures surface at the build gate. If the
+          strict install fails, npm and Yarn repositories fall back to a lenient
+          install only so that the remaining gates can still run; the gate still
+          fails.
+        </li>
+        <li>
+          <strong>Rescan: targeted vulnerabilities fixed.</strong> A post-fix
+          <code>snyk test</code> covers every target manifest and shows the
+          targeted vulnerabilities fixed in each: no remaining path to them goes
+          through the upgraded package or through a direct dependency that did not
+          carry it in the baseline. A rescan that fails or omits a target manifest
+          fails the gate. Both scans use <code>--ignore-policy</code>, so a
+          <code>.snyk</code> file cannot hide a vulnerability.
+        </li>
+        <li>
+          <strong>Build.</strong> Maven and Gradle projects compile; JavaScript
+          projects run their TypeScript type-check or build script; Python projects
+          import their main package. Seven JavaScript repositories have neither a
+          type-check nor a build script, so only their tests catch breakage.
+        </li>
+        <li>
+          <strong>Tests.</strong> Every test that passed in the baseline still
+          passes; a skipped or missing test counts as a regression. Tests are
+          matched by name from JUnit XML (Maven, Gradle, pytest) or Jest JSON
+          reports. For the six Mocha-based npm repositories, the passing count must
+          not drop below the baseline.
+        </li>
+      </ol>
+      <p>
+        An attempt is a PASS only if all four gates pass. A gate that does not
+        apply counts as passed. Agents may adapt tests to breaking changes
+        (renames, API migrations, imports) but must not edit tests to make them
+        pass.
+      </p>
+
+      <h2>Metrics</h2>
+      <dl class="definitions">
+        <div>
+          <dt>Gate pass rates</dt>
+          <dd>
+            The share of the {formatInteger(highlighted.attempts)} upgrades that pass
+            each gate, and all four (the PASS rate).
+          </dd>
+        </div>
+        <div>
+          <dt>Vulnerability-fix rate</dt>
+          <dd>
+            The share of the {formatInteger(highlighted.vulnsFixable)} fixable
+            vulnerability instances that are fixed; an instance whose rescan failed
+            counts as not fixed.
+          </dd>
+        </div>
+        <div>
+          <dt>Per-repository (macro) rates</dt>
+          <dd>
+            Repositories contribute 1 to 46 upgrades, so pooled rates lean towards
+            a few large ones. Macro rates average per-repository rates, with 95%
+            intervals from a cluster bootstrap that resamples whole repositories
+            (10,000 resamples).
+          </dd>
+        </div>
+        <div>
+          <dt>Paired comparisons</dt>
+          <dd>
+            For two harnesses on the same upgrades: the difference in macro PASS
+            rate with a repository-level bootstrap interval, and an exact McNemar
+            test on the discordant upgrades, which exactly one of the two passes.
+            McNemar treats upgrades as independent; the bootstrap accounts for
+            correlation within a repository.
+          </dd>
+        </div>
+        <div>
+          <dt>Snyk-advice-solvable split</dt>
+          <dd>
+            The upgrades the package manager bump passes, a lower bound on what
+            mechanical upgrading can solve. An agent's regressions are upgrades the
+            bump passes and the agent fails; its value-add, upgrades it passes and
+            the bump fails. PASS rates are reported on both sides, with an exact
+            McNemar test of value-add against regressions.
+          </dd>
+        </div>
+      </dl>
+      <p>
+        All four harnesses ran on the same {formatInteger(highlighted.attempts)}
+        {" "}upgrades from {highlighted.repos} repositories. The three agents share
+        identical baselines ({formatInteger(highlighted.vulnsFixable)} fixable
+        vulnerability instances in Snyk scans of 4–5 October 2026), with no
+        infrastructure errors and no wall-clock timeouts. Three verification
+        rescans failed (one for Claude Code + Snyk scan, two for Claude Code
+        unaided); those attempts count as failures. The package manager bump ran
+        on {bumpRunDate}, and its {formatInteger(bump.attempts)} upgrades pair
+        one-to-one with the agents'; for two, the recommended target had changed in
+        between.
+      </p>
+      <p>
+        The site also reports cost and latency for the agents, which the paper
+        does not. The Evo Remediation Agent's cost is estimated from its token
+        counts at ${pricing.inputPerMillion} per
+        million input and ${pricing.outputPerMillion} per million output tokens;
+        Claude Code's is what the tool reports. The two methods are not directly
+        comparable, and token counts are not comparable either. Latency is the
+        agent's run alone.
+      </p>
+
+      <h2>Threats to validity</h2>
+      <h3>Construct validity</h3>
+      <ul>
+        <li>
+          <strong>Snyk as task source and judge.</strong> Tasks and the rescan use
+          Snyk's vulnerability database, which Claude Code unaided cannot consult,
+          so a fixed version taken from another database may still be flagged.
+          This penalises only Claude Code unaided; the Evo Remediation Agent and
+          Claude Code + Snyk scan receive the same findings and target.
+        </li>
+        <li>
+          <strong>Test strength.</strong> Six repositories (91 of the 307
+          upgrades) have at most four passing baseline tests, leaving most of the
+          work to the build gate, and client tests often miss the call sites an
+          upgrade breaks. Agents can also run these tests, so one that over-fits to
+          them would still pass. This matters less for a gate that only asks that
+          existing behaviour be kept.
+        </li>
+        <li>
+          <strong>Verifier noise.</strong> Test identities omit the module name, so
+          same-named tests in different modules can mask regressions; three npm
+          repositories without lockfiles let dependency trees float between
+          baseline and verification; and the baseline is measured once, so a flaky
+          test can be recorded as a regression.
+        </li>
+        <li>
+          <strong>A deliberately simple baseline.</strong> The package manager bump
+          never moves a BOM or parent or tries another version, so the
+          Snyk-advice-solvable split is a lower bound on what mechanical upgrading
+          can solve.
+        </li>
+        <li>
+          <strong>New vulnerabilities not penalised.</strong> They appear in more
+          Evo Remediation Agent attempts than Claude Code attempts, so this favours
+          the Evo Remediation Agent.
+        </li>
+      </ul>
+      <h3>Internal validity</h3>
+      <ul>
+        <li>
+          <strong>Leakage.</strong> The GitHub and Snyk blocks are host-file based,
+          without egress filtering, so they can be bypassed; more simply, about 25
+          repositories are published libraries whose later releases are on package
+          registries. Leakage would favour Claude Code, since the Evo Remediation
+          Agent has no web tool and its prompt forbids such fetches. Claude Code
+          transcripts were not kept, so leakage cannot be audited.
+        </li>
+        <li>
+          <strong>Training-data exposure.</strong> 40 of the 43 public repositories
+          are pinned at commits that predate {model.name}'s training data cutoff,
+          so the model may have seen these projects, their later upgrades or fixes
+          for the same vulnerabilities. This may inflate absolute pass rates, but
+          all three agents share the model.
+        </li>
+        <li>
+          <strong>Failure-cause assignment.</strong> Root causes come from
+          rule-based heuristics and a single annotator, with no agreement measure.
+        </li>
+      </ul>
+      <h3>External validity</h3>
+      <ul>
+        <li>
+          <strong>Case set selection.</strong> A few very large repositories were
+          excluded, so VulnBump under-represents very large repositories and,
+          since several are Gradle builds, Gradle.
+        </li>
+        <li>
+          <strong>Scope.</strong> VulnBump covers the six package managers behind
+          about 92% of production issue–project pairs (not Go, .NET, Ruby, PHP or
+          pnpm), and scores upgrades one at a time rather than ordered and combined
+          in one tree, as remediation is usually run in practice.
+        </li>
+      </ul>
+      <h3>Conclusion validity</h3>
+      <p>
+        Each agent, and the package manager bump, ran once per upgrade, so the
+        intervals capture variation across repositories, not reruns. The McNemar
+        tests assume independent upgrades; the repository-level bootstrap, which
+        does not, agrees for the agent comparisons, but comparisons with the
+        package manager bump rest on McNemar tests and per-split macro rates only.
+        Several package managers have only {Math.min(...repoCounts)} repositories,
+        so per-package-manager estimates are imprecise.
+      </p>
+
+      <h2>Reproducing the results</h2>
+      <p>
+        Upgrade tasks are derived from a baseline Snyk scan at run time, so
+        reproducing them requires the Snyk CLI and a token. The repositories are
+        pinned, but the vulnerability database is not: a later run on the same 43
+        commits will usually find more than the
+        {" "}{formatInteger(highlighted.vulnsFixable)} fixable instances reported
+        here, and may recommend different target versions. The numbers describe
+        the database as of 4–5 October 2026. Of three advisories published between
+        the last baseline scan (5 October) and the package manager bump run (8
+        October), one is fixed only from tomcat-embed-websocket 10.1.60, so two
+        upgrades in tokuhirom/java-handbook changed their target from 10.1.59 to
+        10.1.60; the bump is paired with the agents on all 307 upgrades, including
+        these two. Runs scanned on different days should
+        be compared only on tasks with the same recommended upgrade, and against
+        their own baseline.
+      </p>
+      <p>
+        The authors plan to release the harness (task builder, agent sandbox,
+        four-gate verifier, report and analysis scripts) and the 43 evaluation
+        cases as open source. The aggregated results are on the
+        {" "}<a href="/data">data page</a>. Questions about {site.name} can be raised
+        on
+        {benchmark.links.github ? <a href={benchmark.links.github}> GitHub</a> : " GitHub"}.
+      </p>
+      <p class="byline">
+        Source: {paper.title}. {paper.authors.join(", ")}. {paper.affiliation},
+        {" "}{paperDate}.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .container.wide {
+    margin-block: var(--space-5) var(--space-6);
+  }
+
+  .definitions {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .definitions div {
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  dt {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  dd {
+    margin-top: var(--space-1);
+    color: var(--ink-soft);
+  }
+
+  .data-table th small {
+    display: block;
+    max-width: 28rem;
+    margin-top: 0.15rem;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    font-weight: 400;
+    white-space: normal;
+  }
+
+  .data-table td {
+    white-space: nowrap;
+  }
+
+  .listing {
+    overflow-x: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1.55;
+  }
+
+  .phases {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .phases .when {
+    margin-left: 0.4rem;
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .phases p {
+    margin-top: 0.2rem;
+  }
+
+  .byline {
+    margin-top: var(--space-5);
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+</style>
