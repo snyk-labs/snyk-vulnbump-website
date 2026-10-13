@@ -11,6 +11,8 @@ const { tagline, headline, flowSteps } = benchmark;
 const metric = getMetric(headline.metric);
 const value = highlighted.values[metric.key] ?? 0;
 const gates = countWord(flowSteps.length - 1).toLowerCase();
+// Set links.paper in benchmark.json once the whitepaper is published.
+const paperUrl = benchmark.links.paper;
 ---
 
 <section class="hero container" aria-labelledby="hero-title">
@@ -25,6 +27,15 @@ const gates = countWord(flowSteps.length - 1).toLowerCase();
     <div class="button-row">
       <a class="button" href="/results">See the results →</a>
       <a class="button secondary" href="/methodology">How it works</a>
+      {
+        paperUrl ? (
+          <a class="button secondary" href={paperUrl} rel="noreferrer">
+            Read the whitepaper <span aria-hidden="true">↗</span>
+          </a>
+        ) : (
+          <span class="button secondary pending">Whitepaper coming soon</span>
+        )
+      }
     </div>
   </div>
 
@@ -61,6 +72,18 @@ const gates = countWord(flowSteps.length - 1).toLowerCase();
 
   .button-row {
     margin-top: 2rem;
+  }
+
+  /* Not yet a link: an outline in the site's dashed "not there yet" style. */
+  .button.secondary.pending {
+    border-style: dashed;
+    color: var(--ink-faint);
+    cursor: default;
+  }
+
+  .button.secondary.pending:hover {
+    border-color: var(--rule-strong);
+    background: transparent;
   }
 
   .hero-stat__value {
