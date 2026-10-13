@@ -1,0 +1,183 @@
+---
+import { benchmark } from "../../data";
+import type { Baseline, Configuration } from "../../data/schema";
+import { formatInteger, formatPercent } from "../../lib/format";
+
+/*
+ * Key results (paper Table 2) in the paper's layout: configurations as columns,
+ * the four gates, then PASS and instances fixed with their counts underneath.
+ * Static HTML; every value comes from the benchmark data.
+ */
+const { metrics, configurations, baseline, release } = benchmark;
+const columns: ((Configuration | Baseline) & { isBaseline: boolean })[] = [
+  { ...baseline, isBaseline: true },
+  ...configurations.map((c) => ({ ...c, isBaseline: false })),
+];
+const attempts = [...new Set(configurations.map((c) => c.attempts))].join(" / ");
+const fixable = [...new Set(configurations.map((c) => c.vulnsFixable))]
+  .map((n) => formatInteger(n))
+  .join(" / ");
+const [attemptsLabel, fixableLabel] = [attempts, fixable];
+
+/** The "(n/N)" line the paper prints under PASS and instances fixed. */
+function counts(key: string, c: Configuration | Baseline): string | null {
+  if (key === "allGates") return `(${formatInteger(c.passed)}/${formatInteger(c.attempts)})`;
+  if (key === "instancesFixed") return `(${formatInteger(c.vulnsCleared)}/${formatInteger(c.vulnsFixable)})`;
+  return null;
+}
+
+const rows = metrics
+  .filter((m) => m.key !== "projectWorks")
+  .map((metric) => {
+    const values = columns.map((c) => c.values[metric.key] ?? 0);
+    // Best compares the agents only; the baseline is a reference.
+    const best = Math.max(...columns.flatMap((c, i) => (c.isBaseline ? [] : [Math.round(values[i]! * 1000)])));
+    return {
+      metric,
+      cells: columns.map((c, i) => ({
+        value: values[i]!,
+        isBest: !c.isBaseline && Math.round(values[i]! * 1000) === best,
+        counts: counts(metric.key, c),
+      })),
+    };
+  });
+---
+
+<section class="container key-results" aria-labelledby="key-results-title">
+  <p class="eyebrow">Key results</p>
+  <h2 class="section-title" id="key-results-title">Four gates, one verdict</h2>
+  <figure class="paper-table">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col" class="stub"><span class="visually-hidden">Metric</span></th>
+            {
+              columns.map((c) => (
+                <th scope="col" class="num">
+                  {c.label}
+                  {c.isBaseline && <small>non-agentic baseline</small>}
+                </th>
+              ))
+            }
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map(({ metric, cells }) => (
+              <tr class:list={{ "is-verdict": metric.kind === "verdict" }}>
+                <th scope="row">
+                  {metric.label} <span class="up" aria-label="higher is better">↑</span>
+                </th>
+                {cells.map((cell) => (
+                  <td class:list={["num", { "is-best": cell.isBest }]}>
+                    {cell.value === 1 ? "100%" : formatPercent(cell.value)}
+                    {cell.counts && <small>{cell.counts}</small>}
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <figcaption>
+      <strong>Table 2:</strong> Key results on VulnBump, with Claude Sonnet 5.5 for all agents; the
+      package manager bump is the non-agentic baseline. Gate and PASS rates are out of {attemptsLabel}{" "}
+      upgrades. Targeted vulnerabilities fixed is the rescan gate. Vulnerability instances are out of
+      {" "}{fixableLabel}. Bold marks the best agent. Dataset {release.datasetVersion}.
+    </figcaption>
+  </figure>
+</section>
+
+<style>
+  .key-results {
+    display: grid;
+    gap: 0.625rem;
+    padding-top: 4rem;
+  }
+
+  .paper-table {
+    margin: 1rem 0 0;
+  }
+
+  /* Booktabs: heavy rule above and below, a light rule under the header, no verticals. */
+  table {
+    width: 100%;
+    min-width: 40rem;
+    border-collapse: collapse;
+    border-top: 2px solid var(--rule-strong);
+    border-bottom: 2px solid var(--rule-strong);
+    color: var(--ink-soft);
+  }
+
+  th,
+  td {
+    padding: 0.7rem 1rem;
+    vertical-align: top;
+  }
+
+  thead th {
+    border-bottom: 1px solid var(--rule-strong);
+    color: #ffffff;
+    font-weight: 600;
+    line-height: 1.3;
+    vertical-align: bottom;
+  }
+
+  thead small {
+    display: block;
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    font-weight: 400;
+  }
+
+  tbody th {
+    color: #ffffff;
+    font-weight: 400;
+    text-align: left;
+  }
+
+  .num {
+    text-align: right;
+  }
+
+  td {
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  td.is-best {
+    font-weight: 700;
+  }
+
+  td small {
+    display: block;
+    color: var(--ink-faint);
+    font-size: 0.72rem;
+    font-weight: 400;
+  }
+
+  .up {
+    color: var(--ink-faint);
+  }
+
+  /* Paper layout: a rule sets PASS off from the gates above it. */
+  .is-verdict th,
+  .is-verdict td {
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  figcaption {
+    max-width: 62rem;
+    margin-top: 0.75rem;
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  figcaption strong {
+    color: var(--ink-soft);
+  }
+</style>
