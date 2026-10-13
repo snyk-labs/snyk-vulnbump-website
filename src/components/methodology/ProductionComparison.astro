@@ -9,7 +9,7 @@ import { benchmark } from "../../data";
 const { representativeness, release } = benchmark;
 const { dimensions, perProject } = representativeness;
 const series = [
-  { key: "production", label: "Snyk Open Source production", color: "var(--series-muted-strong)" },
+  { key: "production", label: "Snyk Open Source production", color: "var(--series-2)" },
   { key: "benchmark", label: "VulnBump dataset", color: "var(--series-highlight)" },
 ] as const;
 
@@ -65,7 +65,25 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 
     <section class="chart__plot panel panel--wide" aria-labelledby="dist-per-project">
       <h3 id="dist-per-project">{perProject.label}</h3>
-      <p class="note">{perProject.note}</p>
+      <p class="note">
+        How many known vulnerabilities a single project has, compared across Snyk's real-world
+        projects (orange) and the VulnBump repositories (purple), by language. Each row summarises
+        many projects: the bar and whiskers show how they spread out, so you can see whether
+        VulnBump's projects look like typical ones.
+      </p>
+      <div class="key" aria-label="How to read each row">
+        <div class="key__demo" aria-hidden="true">
+          <span class="key__whisker" style="left: 4%; width: 92%" />
+          <span class="key__box" style="left: 26%; width: 40%" />
+          <span class="key__median" style="left: 44%" />
+        </div>
+        <ul class="key__labels">
+          <li><b>Thin line</b> the 10th to 90th percentile: 8 in 10 projects fall inside it, so a long line means a wide spread.</li>
+          <li><b>Bar</b> the middle half of projects (25th to 75th percentile). Wider means more variation.</li>
+          <li><b>White tick</b> the median: half of projects have fewer vulnerabilities, half have more.</li>
+          <li><b>Numbers</b> median first, then the bar range and the line range.</li>
+        </ul>
+      </div>
       <ul class="boxes">
         {
           perProject.groups.map((g) => (
@@ -84,7 +102,7 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
                       <span class="box" style={`left: ${pos(p25)}; width: calc(${pos(p75)} - ${pos(p25)}); background: ${s.color}`} />
                       <span class="median" style={`left: ${pos(p50)}`} />
                       <span class="box-value metric" style={`left: calc(${pos(p90)} + 0.4rem)`}>
-                        {fmt(p50)} <span>({fmt(p25)}–{fmt(p75)}, P10–P90 {fmt(p10)}–{fmt(p90)})</span>
+                        median {fmt(p50)} <span>· bar {fmt(p25)}–{fmt(p75)} · line {fmt(p10)}–{fmt(p90)}</span>
                       </span>
                     </span>
                   );
@@ -97,6 +115,7 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
       <div class="axis" aria-hidden="true">
         {ticks.map((t) => <span class="chart-tick-label metric" style={`left: ${pos(t)}`}>{t}</span>)}
       </div>
+      <p class="axis-title">Vulnerabilities in one project</p>
     </section>
   </div>
 
@@ -218,7 +237,7 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
   /* Box plots share one axis; values sit past the whisker. */
   .boxes .pair {
     gap: 6px;
-    margin-right: 13rem;
+    margin-right: 19rem;
   }
 
   .box-track {
@@ -261,11 +280,71 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
     color: var(--ink-faint);
   }
 
+  .key {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-md, 8px);
+    background: var(--panel);
+  }
+
+  .key__demo {
+    position: relative;
+    height: 1.25rem;
+    max-width: 22rem;
+  }
+
+  .key__whisker {
+    position: absolute;
+    top: 50%;
+    border-top: 1px solid var(--ink-soft);
+  }
+
+  .key__box {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--series-highlight);
+  }
+
+  .key__median {
+    position: absolute;
+    top: -2px;
+    height: calc(100% + 4px);
+    border-left: 2px solid #ffffff;
+  }
+
+  .key__labels {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    gap: 0.3rem 1.5rem;
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+    list-style: none;
+  }
+
+  .key__labels b {
+    margin-right: 0.35rem;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .axis-title {
+    margin-right: 19rem;
+    margin-left: calc(5.5rem + 0.75rem);
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    text-align: center;
+  }
+
   .axis {
     position: relative;
     height: 1rem;
     margin-left: calc(5.5rem + 0.75rem);
-    margin-right: 13rem;
+    margin-right: 19rem;
     border-top: 1px solid var(--chart-axis);
   }
 
@@ -279,12 +358,19 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 
   @media (max-width: 40rem) {
     .boxes .pair,
-    .axis {
+    .axis,
+    .axis-title {
       margin-right: 0;
     }
 
     .box-value {
       display: none;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .key__labels {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
