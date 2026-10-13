@@ -5,16 +5,13 @@ import { benchmarkSchema } from "../src/data/schema";
 import { breakdownsCsv, comparisonCsv, ecosystemsCsv } from "../src/lib/csv";
 import {
   formatCompact,
-  formatFraction,
-  formatMacro,
   formatPercent,
   formatPp,
-  formatPValue,
   formatRatio,
-  formatSignedFraction,
   formatUsd,
   formatWholePercent,
 } from "../src/lib/format";
+import { authorLine, listWords } from "../src/lib/words";
 
 const clone = () => structuredClone(raw) as Record<string, any>;
 const messages = (data: unknown) =>
@@ -76,31 +73,21 @@ describe("benchmark dataset", () => {
     }
   });
 
-  // Paper Table 3.
-  it("matches the paper's repository-level results", () => {
-    const rows = benchmark.configurations.map((c) => [
-      formatMacro(c.macro),
-      `${c.reposAllPass} / ${c.reposNonePass}`,
-      formatMacro(c.macroFixed),
-      c.quality.remaining.slice(1).join(" / "),
-    ]);
-    expect(rows).toEqual([
-      ["0.680 [0.582, 0.770]", "15 / 3", "0.807 [0.722, 0.882]", "282 / 223 / 58"],
-      ["0.801 [0.710, 0.879]", "22 / 2", "0.901 [0.841, 0.951]", "143 / 167 / 40"],
-      ["0.931 [0.881, 0.971]", "32 / 0", "0.976 [0.952, 0.994]", "35 / 35 / 14"],
-    ]);
+  // Paper section 5.1: macro PASS rates, bump first.
+  it("matches the paper's per-repository (macro) PASS rates", () => {
+    expect(formatPercent(benchmark.baseline.macro)).toBe("51.3%");
+    expect(benchmark.configurations.map((c) => formatPercent(c.macro))).toEqual(["68.0%", "80.1%", "93.1%"]);
   });
 
-  // Paper section 5.2.
-  it("matches the paper's paired comparisons", () => {
+  // Paper section 5.1: Evo passes 39 more than Claude Code + Snyk scan.
+  it("keeps the paired comparisons consistent with the paper", () => {
     const shown = benchmark.paired.comparisons.map(
-      (c) =>
-        `${c.a}>${c.b} ${c.aOnly}/${c.bOnly} p=${formatPValue(c.p)} ${formatSignedFraction(c.macroDiff)} [${formatFraction(c.ci[0])}, ${formatFraction(c.ci[1])}]`,
+      (c) => `${c.a}>${c.b} ${c.aOnly}/${c.bOnly} ${formatPp(configById(c.a).macro, configById(c.b).macro)}`,
     );
     expect(shown).toEqual([
-      "evo-remediation-agent>claude-code-snyk 46/7 p=4.0 × 10⁻⁸ +0.130 [0.062, 0.214]",
-      "evo-remediation-agent>claude-code 96/2 p=3.1 × 10⁻²⁶ +0.251 [0.170, 0.341]",
-      "claude-code-snyk>claude-code 64/9 p=2.4 × 10⁻¹¹ +0.121 [0.033, 0.203]",
+      "evo-remediation-agent>claude-code-snyk 46/7 +13.0 pp",
+      "evo-remediation-agent>claude-code 96/2 +25.1 pp",
+      "claude-code-snyk>claude-code 64/9 +12.1 pp",
     ]);
     const count = (ids: string[]) =>
       benchmark.paired.agreement.find((a) => a.passedBy.length === ids.length && ids.every((id) => a.passedBy.includes(id)))!.count;
@@ -129,7 +116,7 @@ describe("benchmark dataset", () => {
     ]);
   });
 
-  // Draft v2: the package manager bump in Tables 2, 3 and 5 and Figure 4.
+  // The package manager bump in Tables 2 and 4 and Figures 4 to 6.
   it("matches the paper's package manager bump column", () => {
     const b = benchmark.baseline;
     expect(benchmark.metrics.map((m) => formatPercent(b.values[m.key]!))).toEqual([
@@ -143,34 +130,50 @@ describe("benchmark dataset", () => {
     ]);
     expect(formatRatio(b.passed, b.attempts)).toBe("144 of 307");
     expect(formatRatio(b.vulnsCleared, b.vulnsFixable)).toBe("1,168 of 2,066");
-    expect([formatMacro(b.macro), `${b.reposAllPass} / ${b.reposNonePass}`, formatMacro(b.macroFixed)]).toEqual([
-      "0.513 [0.397, 0.623]",
-      "10 / 10",
-      "0.725 [0.611, 0.832]",
-    ]);
-    expect(b.remaining.slice(1)).toEqual([469, 341, 88]);
     // Dependencies, vulnerability, build, tests.
     expect(firstFailedGates(b).map((g) => g.count)).toEqual([54, 78, 16, 15]);
     expect(benchmark.rootCauses.groups.map((g) => g.counts[b.id])).toEqual([77, 54, 28, 4]);
-    expect(b.jumps.map((j) => formatWholePercent(j.passed / j.attempts))).toEqual(["67%", "58%", "25%"]);
+    // Figure 5: patch, minor, major, minor (0.x); the text merges minor and 0.x (58%).
+    expect(b.jumps.map((j) => formatWholePercent(j.passed / j.attempts))).toEqual(["67%", "59%", "25%", "33%"]);
+    const minor = b.jumps.filter((j) => j.id.startsWith("minor"));
+    expect(formatWholePercent(minor.reduce((t, j) => t + j.passed, 0) / minor.reduce((t, j) => t + j.attempts, 0))).toBe("58%");
+    // Figure 6: fix difficulty, then dependency type.
+    expect(b.breakdowns.upgradeSize!.map((c) => formatWholePercent(c.passRate))).toEqual(["28%", "39%", "17%"]);
+    expect(b.breakdowns.dependency!.map((c) => formatWholePercent(c.passRate))).toEqual(["41%", "24%"]);
   });
 
-  // Draft v2, Table 4.
+  // Paper Table 3.
   it("matches the paper's split by what Snyk's advice alone solves", () => {
     const rows = benchmark.adviceSplit.agents.map((a) => [
       a.id,
       formatPercent(a.solvablePassed / benchmark.adviceSplit.solvable),
-      formatMacro(a.solvableMacro),
+      a.regressions,
       formatPercent(a.otherPassed / benchmark.adviceSplit.other),
-      formatMacro(a.otherMacro),
-      `${a.regressions}/${a.valueAdd}/${a.valueAddTestEdits}/${a.valueAddManagedPins}`,
-      formatPValue(a.p),
+      a.gains,
     ]);
     expect(rows).toEqual([
-      ["claude-code", "86.1%", "0.918 [0.859, 0.968]", "36.2%", "0.413 [0.288, 0.543]", "20/59/11/20", "1.3 × 10⁻⁵"],
-      ["claude-code-snyk", "95.8%", "0.986 [0.968, 1.000]", "61.3%", "0.647 [0.518, 0.768]", "6/100/17/42", "4.5 × 10⁻²³"],
-      ["evo-remediation-agent", "99.3%", "0.997 [0.990, 1.000]", "82.2%", "0.870 [0.791, 0.940]", "1/134/35/47", "6.2 × 10⁻³⁹"],
+      ["claude-code", "86.1%", 20, "36.2%", 59],
+      ["claude-code-snyk", "95.8%", 6, "61.3%", 100],
+      ["evo-remediation-agent", "99.3%", 1, "82.2%", 134],
     ]);
+  });
+
+  it("states the paper's five main findings", () => {
+    expect(benchmark.findings.map((f) => f.title)).toEqual([
+      "Only the vulnerability check separates the agents",
+      "An SCA scanner is a key tool for agents fixing vulnerabilities",
+      "Knowing the target is not enough",
+      "The agents fail in opposite ways",
+      "Major framework migrations remain hard",
+    ]);
+  });
+
+  it("credits the paper's authors and affiliations", () => {
+    expect(benchmark.paper.date).toBe("2026-10-12");
+    expect(authorLine(benchmark.paper.authors)).toBe(
+      "Gabija Pasiunaite, Ryan McMorrow, Brian Clark and Liran Tal (Snyk) and Luke Tu (Brown University and Snyk)",
+    );
+    expect(benchmark.citation?.authors).toEqual(benchmark.paper.authors.map((a) => a.name));
   });
 
   it("uses the paper's names", () => {
@@ -182,8 +185,8 @@ describe("benchmark dataset", () => {
     expect(benchmark.baseline.label).toBe("Package manager bump");
   });
 
-  // Paper Figures 5 and 6.
-  it("matches the paper's version-jump and package-manager figures", () => {
+  // Paper Figure 5, and the per-package-manager macro rates behind section 5.1.
+  it("matches the paper's version-jump figure and package-manager claim", () => {
     const jumps = Object.fromEntries(
       benchmark.configurations.map((c) => [c.id, c.jumps.map((j) => formatWholePercent(j.passed / j.attempts))]),
     );
@@ -203,11 +206,34 @@ describe("benchmark dataset", () => {
       "claude-code-snyk": [75, 93, 78, 100, 97, 72],
       "evo-remediation-agent": [89, 100, 94, 100, 97, 98],
     });
+    // "At or above both Claude Code agents in every package manager."
+    const evo = configById("evo-remediation-agent").ecosystems;
+    for (const other of baselines) {
+      other.ecosystems.forEach((e, i) => expect(evo[i]!.macroPassRate).toBeGreaterThanOrEqual(e.macroPassRate));
+    }
   });
 
-  // Paper Figure 1.
+  // Paper Figure 6: share fixed by passing upgrades, by fix difficulty and dependency type.
+  it("matches the paper's transitive-vulnerability figure", () => {
+    const shares = Object.fromEntries(
+      benchmark.configurations.map((c) => [
+        c.id,
+        [...c.breakdowns.upgradeSize!.slice(0, 3), ...c.breakdowns.dependency!].map((x) => formatWholePercent(x.passRate)),
+      ]),
+    );
+    // Patch, minor, major, direct, transitive.
+    expect(shares).toEqual({
+      "claude-code": ["37%", "45%", "30%", "62%", "28%"],
+      "claude-code-snyk": ["67%", "65%", "55%", "71%", "59%"],
+      "evo-remediation-agent": ["79%", "82%", "70%", "91%", "73%"],
+    });
+  });
+
+  // Paper Figures 1 and 2 and section 3.4.
   it("matches the paper's dataset selection", () => {
     expect(benchmark.selection.funnel.map((f) => f.count)).toEqual([767, 508, 475, 199, 141, 99, 43]);
+    expect(benchmark.selection.composition.medianTests).toBe(88);
+    expect(benchmark.representativeness.dimensions.find((d) => d.id === "difficulty")!.benchmark).toEqual([34, 41, 24]);
     expect(benchmark.selection.sources.map((s) => s.count)).toEqual([274, 280, 133, 46, 34]);
     expect(configById("evo-remediation-agent").ecosystems.map((e) => e.repos)).toEqual([18, 3, 11, 3, 3, 5]);
   });
@@ -235,10 +261,17 @@ describe("benchmark dataset", () => {
     expect(messages(data).some((m) => /"severity" covers/.test(m))).toBe(true);
   });
 
-  it("rejects a macro rate outside its interval", () => {
+  it("rejects bump jumps on different upgrades than the agents'", () => {
     const data = clone();
-    data.configurations[0].macro.rate = 0.99;
-    expect(messages(data)).toContain("Macro rate must lie inside its confidence interval");
+    data.baseline.jumps[1].attempts -= 1;
+    data.baseline.jumps[2].attempts += 1;
+    expect(messages(data)).toContain('"minor" has 122 upgrades, the agents 123');
+  });
+
+  it("rejects a bump breakdown bucket the agents do not have", () => {
+    const data = clone();
+    data.baseline.breakdowns.dependency[0].n = 616;
+    expect(messages(data)).toContain('"Direct" must match an agent bucket of the same size');
   });
 
   it("rejects a selection funnel that does not end at the repositories run", () => {
@@ -298,9 +331,12 @@ describe("formatting", () => {
     expect(formatUsd(0.0848)).toBe("$0.085");
     expect(formatCompact(976194)).toBe("976.2K");
     expect(formatPp(0.9007, 0.596)).toBe("+30.5 pp");
-    expect(formatPValue(4.0e-8)).toBe("4.0 × 10⁻⁸");
-    expect(formatPValue(3.1e-26)).toBe("3.1 × 10⁻²⁶");
-    expect(formatMacro({ rate: 0.68, ci: [0.582, 0.77] })).toBe("0.680 [0.582, 0.770]");
+  });
+
+  it("joins words and groups authors by affiliation", () => {
+    expect(listWords(["a"])).toBe("a");
+    expect(listWords(["a", "b", "c"])).toBe("a, b and c");
+    expect(authorLine([{ name: "A", affiliations: ["X"] }, { name: "B", affiliations: ["X"] }])).toBe("A and B (X)");
   });
 });
 
@@ -318,12 +354,11 @@ describe("CSV downloads", () => {
     expect(lines).toHaveLength(rows + 1);
   });
 
-  it("emits one breakdown row per category", () => {
+  it("emits one breakdown row per category, the baseline's first", () => {
     const lines = breakdownsCsv(benchmark).trim().split("\n");
-    const rows = benchmark.configurations.reduce(
-      (n, c) => n + Object.values(c.breakdowns).reduce((m, cats) => m + cats.length, 0),
-      0,
-    );
+    const count = (b: Record<string, unknown[]>) => Object.values(b).reduce((m, cats) => m + cats.length, 0);
+    const rows = benchmark.configurations.reduce((n, c) => n + count(c.breakdowns), count(benchmark.baseline.breakdowns));
     expect(lines).toHaveLength(rows + 1);
+    expect(lines[1]).toBe("package-manager-bump,upgradeSize,Patch,713,,0.28");
   });
 });

@@ -8,7 +8,7 @@ export interface FunnelLane {
   /** One line under the name, e.g. what the agent is given. */
   subtitle: string;
   highlight: boolean;
-  /** The non-agent baseline: drawn as an outline, not a fill. */
+  /** The non-agentic baseline: drawn as an outline, not a fill. */
   baseline?: boolean;
   /** Upgrades left after each step, aligned with `steps`. */
   flow: number[];
@@ -174,7 +174,7 @@ export function GateFunnel({ lanes, steps, gates, datasetVersion }: GateFunnelPr
       <figcaption className="chart__caption">
         <span>Dataset {datasetVersion}</span>
         <span>Purple: upgrades still passing after each gate, in order · orange: dropped at that gate</span>
-        {lanes.some((l) => l.baseline) && <span>Outlined: the non-agent package manager bump</span>}
+        {lanes.some((l) => l.baseline) && <span>Outlined: the non-agentic package manager bump</span>}
       </figcaption>
     </figure>
   );

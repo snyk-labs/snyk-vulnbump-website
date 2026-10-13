@@ -1,6 +1,14 @@
 import { useState } from "react";
-import type { BreakdownCategory, Dimension } from "../../data/schema";
+import type { Dimension } from "../../data/schema";
 import { formatInteger, formatWholePercent } from "../../lib/format";
+
+/** One bucket; the baseline has no fix rate. */
+interface Bucket {
+  label: string;
+  n: number;
+  passRate: number;
+  fixRate?: number;
+}
 
 export interface BreakdownSeries {
   id: string;
@@ -8,11 +16,13 @@ export interface BreakdownSeries {
   highlight: boolean;
   /** Opacity of the PASS fill (`--op`) for this agent. */
   op: string;
-  breakdowns: Record<string, BreakdownCategory[]>;
+  /** The non-agentic baseline: drawn as an outline, only where it has data. */
+  baseline?: boolean;
+  breakdowns: Record<string, Bucket[]>;
 }
 
 interface VulnBreakdownProps {
-  /** Agents in display order. */
+  /** Agents in display order, then the baseline. */
   series: BreakdownSeries[];
   dimensions: Dimension[];
   datasetVersion: string;
@@ -38,8 +48,9 @@ const rates: { key: RateKey; label: string; miss: string; caption: string }[] = 
 /**
  * The explorer (2b design): per-vulnerability results in buckets of one
  * dimension. Each agent gets a purple bar (at its opacity) on an orange
- * track, so the orange that remains is what did not pass. Values are whole
- * percentages, as reported by the harness.
+ * track, so the orange that remains is what did not pass. The baseline is a
+ * dashed outline, shown only for the dimensions and rate the paper reports.
+ * Values are whole percentages.
  */
 export function VulnBreakdown({ series, dimensions, datasetVersion }: VulnBreakdownProps) {
   const [dimensionId, setDimensionId] = useState(dimensions[0]?.id ?? "");
@@ -47,10 +58,11 @@ export function VulnBreakdown({ series, dimensions, datasetVersion }: VulnBreakd
 
   const dimension = dimensions.find((d) => d.id === dimensionId) ?? dimensions[0]!;
   const rate = rates.find((r) => r.key === rateKey)!;
-  const present = series.filter((s) => s.breakdowns[dimension.id]);
-  const categories = present[0]?.breakdowns[dimension.id] ?? [];
+  const present = series.filter((s) => s.breakdowns[dimension.id]?.some((c) => c[rateKey] !== undefined));
+  const categories = (present.find((s) => !s.baseline) ?? present[0])?.breakdowns[dimension.id] ?? [];
   const cell = (s: BreakdownSeries, label: string) =>
     s.breakdowns[dimension.id]?.find((c) => c.label === label);
+  const baseline = present.find((s) => s.baseline);
 
   return (
     <figure className="chart">
@@ -88,7 +100,11 @@ export function VulnBreakdown({ series, dimensions, datasetVersion }: VulnBreakd
       <ul className="explorer__legend" aria-label="Legend">
         {present.map((s) => (
           <li key={s.id}>
-            <span className="explorer__swatch" style={{ "--op": s.op } as React.CSSProperties} aria-hidden="true" />
+            <span
+              className={s.baseline ? "explorer__swatch explorer__swatch--baseline" : "explorer__swatch"}
+              style={{ "--op": s.op } as React.CSSProperties}
+              aria-hidden="true"
+            />
             {s.label}
           </li>
         ))}
@@ -107,10 +123,15 @@ export function VulnBreakdown({ series, dimensions, datasetVersion }: VulnBreakd
             </div>
             <ul className="explorer__bars">
               {present.map((s) => {
-                const value = cell(s, category.label)?.[rateKey] ?? 0;
+                const value = cell(s, category.label)?.[rateKey];
+                if (value === undefined) return null;
                 return (
                   <li key={s.id} aria-label={`${s.label}: ${rate.label.toLowerCase()} ${formatWholePercent(value)}`}>
-                    <span className="passtrack" style={{ "--op": s.op } as React.CSSProperties} aria-hidden="true">
+                    <span
+                      className={s.baseline ? "passtrack passtrack--baseline" : "passtrack"}
+                      style={{ "--op": s.op } as React.CSSProperties}
+                      aria-hidden="true"
+                    >
                       <span style={{ width: `${value * 100}%` }} />
                     </span>
                     <span className="explorer__value metric" aria-hidden="true">
@@ -147,7 +168,7 @@ export function VulnBreakdown({ series, dimensions, datasetVersion }: VulnBreakd
                     return (
                       <td className="num" key={s.id}>
                         {c
-                          ? `${formatWholePercent(c.fixRate)} / ${formatWholePercent(c.passRate)} (${formatInteger(c.n)})`
+                          ? `${c.fixRate === undefined ? "—" : formatWholePercent(c.fixRate)} / ${formatWholePercent(c.passRate)} (${formatInteger(c.n)})`
                           : "—"}
                       </td>
                     );
@@ -163,6 +184,7 @@ export function VulnBreakdown({ series, dimensions, datasetVersion }: VulnBreakd
         <span>Dataset {datasetVersion}</span>
         <span>{rate.caption}</span>
         <span>Per targeted vulnerability, not per attempt · rounded to whole percent</span>
+        {baseline && <span>Dashed: the {baseline.label.toLowerCase()}, pass rate only, as the paper reports it</span>}
       </figcaption>
     </figure>
   );

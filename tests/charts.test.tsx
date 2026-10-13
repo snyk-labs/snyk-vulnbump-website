@@ -46,26 +46,33 @@ describe("chart server render", () => {
     expect(html).toContain("gatelane--baseline");
   });
 
-  it("VulnBreakdown shows every agent for the default dimension", () => {
+  it("VulnBreakdown shows every agent and the baseline for the default dimension", () => {
     const html = renderToString(
       <VulnBreakdown
-        series={displayOrder(configurations).map(({ id, label, highlight, breakdowns }) => ({
-          id,
-          label,
-          highlight,
-          op: op[id]!,
-          breakdowns,
-        }))}
+        series={[
+          ...displayOrder(configurations).map(({ id, label, highlight, breakdowns }) => ({
+            id,
+            label,
+            highlight,
+            op: op[id]!,
+            breakdowns,
+          })),
+          { id: baseline.id, label: baseline.label, highlight: false, op: "1", baseline: true, breakdowns: baseline.breakdowns },
+        ]}
         dimensions={dimensions}
         datasetVersion={version}
       />,
     );
     for (const c of configurations) expect(html).toContain(c.label);
-    // Default dimension is fix difficulty (paper Figure 7a). Patch fix / pass
+    // Default dimension is fix difficulty (paper Figure 6a). Patch fix / pass
     // per vulnerability: Evo Remediation Agent, Claude Code + Snyk scan, unaided.
     expect(html).toContain("96% / 79% (713)");
     expect(html).toContain("96% / 67% (713)");
     expect(html).toContain("89% / 37% (713)");
+    // The bump has pass rates only, and no bucket for unclassified vulnerabilities.
+    expect(html).toContain("— / 28% (713)");
+    expect(html).toContain("passtrack passtrack--baseline");
+    expect(html.match(/passtrack--baseline/g)).toHaveLength(3);
   });
 
   it("Leaderboard ranks the agents and lists the baseline unranked", () => {

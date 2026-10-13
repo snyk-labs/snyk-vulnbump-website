@@ -16,7 +16,7 @@ export const highlighted: Configuration = benchmark.configurations.find(
   (c) => c.highlight,
 )!;
 
-/** The non-agent baseline: applies Snyk's recommended version and nothing else. */
+/** The non-agentic baseline: applies Snyk's recommended version and nothing else. */
 export const bump = benchmark.baseline;
 
 /** Every configuration except the highlighted one, in data order. */
@@ -30,7 +30,7 @@ export function ecosystemLabel(id: string): string {
 
 /**
  * Lanes for the gate funnel, in display order: the highlighted agent, the
- * other agents from strongest to weakest, then the non-agent baseline.
+ * other agents from strongest to weakest, then the non-agentic baseline.
  */
 export function funnelLanes() {
   const op = passOpacity(benchmark.configurations);
@@ -81,7 +81,7 @@ export const site = {
   name: "Snyk VulnBump",
   shortName: "VulnBump",
   description:
-    "Can an AI agent upgrade a vulnerable dependency without breaking the project? VulnBump compares Snyk's Evo Remediation Agent with Claude Code, with and without a Snyk scan, and with a non-agent baseline, on 307 upgrades in 43 real repositories.",
+    "Can an AI agent upgrade a vulnerable dependency without breaking the project? VulnBump compares Snyk's Evo Remediation Agent with Claude Code, with and without a Snyk scan, and with a non-agentic baseline, on 307 upgrades in 43 real repositories.",
   repository: "https://github.com/snyk-labs/snyk-vulnbump-website",
 } as const;
 

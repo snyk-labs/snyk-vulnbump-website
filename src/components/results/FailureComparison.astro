@@ -7,7 +7,7 @@ import { formatInteger } from "../../lib/format";
  * Where the harnesses fail (paper section 5.3). First: one stack per harness
  * of its failures by the first verification gate they hit (Figure 4), so each
  * failure counts once. Then: one root cause per failure, grouped by cause
- * (Table 5).
+ * (Table 4).
  */
 const { configurations, rootCauses, baseline, release } = benchmark;
 const column = (
@@ -15,7 +15,7 @@ const column = (
   highlight: boolean,
   isBaseline: boolean,
 ) => ({ id: c.id, label: c.label, flow: c.flow, attempts: c.attempts, passed: c.passed, highlight, isBaseline });
-/** Table 5 keeps the paper's column order: the non-agent baseline first, then the agents. */
+/** Table 4 keeps the paper's column order: the non-agentic baseline first, then the agents. */
 const columns = [
   column(baseline, false, true),
   ...configurations.map((c) => column(c, c.highlight, false)),
@@ -36,7 +36,7 @@ const stageNames = ["dependencies", "rescan", "build", "tests"];
           <div>
             <p class="failstack-row__name">{s.label}</p>
             <p class="failstack-row__total metric">
-              {formatInteger(s.failures)} failures{s.isBaseline ? " · non-agent baseline" : ""}
+              {formatInteger(s.failures)} failures{s.isBaseline ? " · non-agentic baseline" : ""}
             </p>
           </div>
           <div

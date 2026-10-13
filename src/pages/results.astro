@@ -9,34 +9,33 @@ import FindingsList from "../components/results/FindingsList.astro";
 import GateScorecard from "../components/results/GateScorecard.astro";
 import IntegrityTable from "../components/results/IntegrityTable.astro";
 import PairedComparison from "../components/results/PairedComparison.astro";
-import RepoLevelTable from "../components/results/RepoLevelTable.astro";
 import ResultSection from "../components/results/ResultSection.astro";
 import UpgradeJump from "../components/results/UpgradeJump.astro";
 import PageHero from "../components/site/PageHero.astro";
 import { benchmark, funnelLanes, gateDetails } from "../data";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { displayOrder, passOpacity } from "../lib/colors";
-import { formatInteger, formatPercent, formatRatio, formatWholePercent } from "../lib/format";
+import { formatInteger, formatWholePercent } from "../lib/format";
 import { countWord, indexLabel } from "../lib/words";
 
 const { configurations, flowSteps, dimensions, release, findings, model, baseline } = benchmark;
 
 const op = passOpacity(configurations);
-const breakdownSeries = displayOrder(configurations).map(({ id, label, highlight, breakdowns }) => ({
-  id,
-  label,
-  highlight,
-  op: op[id]!,
-  breakdowns,
-}));
-// Draft v2 reports these bump rates to whole percent.
-const bumpJumps = baseline.jumps
-  .map((j) => `${formatWholePercent(j.passed / j.attempts)} of ${j.label.toLowerCase()} upgrades (${j.passed}/${j.attempts})`)
-  .join(", ");
-const wholeShare = (x: { passed: number; attempts: number }) =>
-  `${formatWholePercent(x.passed / x.attempts)} (${x.passed}/${x.attempts})`;
-const share = (x: { passed: number; attempts: number }) =>
-  `${formatPercent(x.passed / x.attempts)} (${formatRatio(x.passed, x.attempts)})`;
+const breakdownSeries = [
+  ...displayOrder(configurations).map(({ id, label, highlight, breakdowns }) => ({
+    id,
+    label,
+    highlight,
+    op: op[id]!,
+    breakdowns,
+  })),
+  { id: baseline.id, label: baseline.label, highlight: false, op: "1", baseline: true, breakdowns: baseline.breakdowns },
+];
+// The paper reports the bump's jump rates to whole percent, minor including 0.x.
+const bumpJump = (...ids: string[]) => {
+  const js = baseline.jumps.filter((j) => ids.includes(j.id));
+  return formatWholePercent(js.reduce((t, j) => t + j.passed, 0) / js.reduce((t, j) => t + j.attempts, 0));
+};
 const agentAttempts = configurations.reduce((t, c) => t + c.attempts, 0);
 const upgrades = configurations[0]!.attempts;
 
@@ -46,7 +45,7 @@ const sections = [
   { id: "head-to-head", label: "Head to head" },
   { id: "gates", label: "Shipping gates" },
   { id: "paired", label: "Paired" },
-  { id: "advice", label: "Beyond Snyk's advice" },
+  { id: "advice", label: "Snyk's guidance" },
   { id: "jump", label: "Version jump" },
   { id: "ecosystems", label: "By package manager" },
   { id: "integrity", label: "Integrity" },
@@ -88,7 +87,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("breakdown")}
     eyebrow="Explorer"
     title="Where upgrades pass or break"
-    description={`Share of fixable vulnerability instances fixed by an attempt that passed every gate. Transitive instances make up 70% of the fixable ones and require reasoning about the dependency graph. Per upgrade, the package manager bump passes ${wholeShare(baseline.transitiveOnly)} of upgrades that fix only transitive vulnerabilities, against ${wholeShare(baseline.otherDependency)} of the rest, and Claude Code + Snyk scan leaves the vulnerability in place in 28% of upgrades that fix only transitive vulnerabilities, against 9% of upgrades of declared dependencies. Vulnerability-heavy repositories are harder too: the Spearman correlation between a repository's baseline vulnerability count and its PASS rate is −0.57 for the Evo Remediation Agent, −0.31 for Claude Code + Snyk scan and −0.48 for Claude Code unaided.`}
+    description="Share of fixable vulnerability instances fixed by an attempt that passed every gate. Transitive vulnerabilities make up 70% of fixable instances, yet for every harness, passing upgrades fix a smaller share of them than of direct ones. Snyk's guidance matters most here: it more than doubles the share of transitive instances Claude Code fixes, from 28% to 59%, against 73% for the Evo Remediation Agent; on direct instances, Claude Code fixes 62% without it. The package manager bump is shown for fix difficulty and dependency type, where the paper reports it."
   >
     <VulnBreakdown
       client:visible
@@ -102,52 +101,53 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("failures")}
     eyebrow="Failures"
     title="The first gate each failure hit"
-    description="Claude Code mostly leaves the targeted vulnerability in place. The Evo Remediation Agent instead lands the upgrade and sometimes breaks the code: 21 of its 30 failures are build or test failures, mostly in major framework migrations such as Spring 5 to 6 or 7, Spring Boot 2 to 3 or 4, and Dropwizard 2 to 5. The package manager bump fails at every gate: of its 163 failures, 78 first fail at the rescan, 54 at dependency resolution and 31 at the build or tests."
+    description="Claude Code mostly stops short of the fix; the Evo Remediation Agent lands the upgrade and sometimes breaks the code. The rescan is the first failed gate in 107 of Claude Code unaided's 124 failures and 48 of Claude Code + Snyk scan's 69, but in only 9 of the Evo Remediation Agent's 30. 21 of its failures break the build or tests, and on 11 of these upgrades Claude Code + Snyk scan left the vulnerability in place. The package manager bump fails at every gate: of its 163 failures, 78 first fail at the rescan, 54 at dependency resolution and 31 at the build or tests."
   >
     <div class="stack">
       <FailureComparison />
       <div class="notes prose reading-width">
         <p>
-          <strong>The dependency gate is decisive.</strong> One npm repository,
-          express-typescript-starter, accounts for 28 of the agents' 30
-          dependency-conflict failures and 18 of the package manager bump's 25:
-          its routing-controllers dependency declares a peer range the installed
-          version already violates, so <code>npm ci</code> rejects any regenerated
-          lockfile. Claude Code used <code>--legacy-peer-deps</code> during its
-          session without saving it; the Evo Remediation Agent wrote it to the
-          project's <code>.npmrc</code> and passes 11 of the 18 upgrades (Claude
-          Code + Snyk scan 2, Claude Code unaided 5, the bump none), so this is not
-          a fixture defect. Without this repository the bump passes 144 of 289
-          upgrades (49.8%). 19 of the 30 agent attempts that failed this gate (11
-          for Claude Code + Snyk scan, 8 unaided) passed every other gate on the
-          lenient fallback install; counting them would raise Claude Code + Snyk
-          scan's PASS rate to 81.1% and Claude Code unaided's to 62.2%.
+          <strong>Claude Code fails silently.</strong> It often avoids the risky
+          upgrade: instead of the major version that fixes every targeted
+          vulnerability, it settles for a patch or minor upgrade that fixes only
+          some. Claude Code unaided stayed within the current major version in 30
+          attempts, and even when told the target version, Claude Code + Snyk scan
+          did so in 10 (for example spring-boot-starter-test 2.7.18 instead of
+          3.5.15). Claude Code + Snyk scan also pinned or excluded transitive
+          packages instead (15) or made no change (12). In 70 of its 124 failures,
+          Claude Code unaided claimed to have fixed vulnerabilities that the rescan
+          still found.
         </p>
         <p>
-          <strong>Version and code compatibility.</strong> Claude Code + Snyk scan
-          often stops within the current major version even when told the target
-          (for example dropwizard-core 2.1.12 instead of 5.0.2). In 8 Claude Code +
-          Snyk scan and 15 Claude Code unaided failures the fixed release needs a
-          newer Python than the project targets (filelock 3.20.3 requires Python
-          3.10), and Poetry rejects 26 of the bump's targets outright for the same
-          reason. Six Evo Remediation Agent failures, in two TypeScript
-          repositories, come from a broad lockfile regeneration that moved
-          transitive packages to type definitions the project's older compiler
-          cannot parse. Its code-compatibility failures (15 of 30, 13 of them major,
-          10 in dddsample-core and openhospital-core) include Spring 6's move from
-          <code>javax.*</code> to <code>jakarta.*</code>, logback-classic 1.6 missing
-          classes under Dropwizard 2.0, and new optimistic-locking failures under
-          Hibernate 6. It also once upgraded more than needed: a caret range
-          (<code>agenda@^4.0.0</code>) floated to a release with a new major
-          version of the MongoDB driver, where Claude Code + Snyk scan pinned 4.0.0
-          and passed.
+          <strong>Some fixes only work inside the agent's session.</strong> In
+          bulletproof-nodejs, Claude Code + Snyk scan left <code>package.json</code>
+          {" "}and <code>package-lock.json</code> out of sync, and in
+          express-typescript-starter, Claude Code installed with
+          {" "}<code>--legacy-peer-deps</code> without saving the flag. Of the 30 Claude
+          Code attempts that failed the strict dependency gate, 19 passed every
+          other gate; the Evo Remediation Agent never failed it. In 15 Claude Code
+          unaided and 8 Claude Code + Snyk scan failures, the fixed release requires
+          a newer Python than the project targets (filelock 3.20.3 requires Python
+          3.10); the agent locked the fix only for newer interpreters, leaving the
+          project's own on the vulnerable version.
         </p>
         <p>
-          <strong>Only one attempt exhausted its turn budget</strong>, an Evo
-          Remediation Agent upgrade in dropwizard-pac4j. Some upgrades defeat every
-          agent: 28 of the Evo Remediation Agent's 30 failures were also failed by
-          a Claude Code agent, and all three failed 23 upgrades in seven Maven and
-          npm repositories.
+          <strong>The Evo Remediation Agent fails visibly.</strong> It attempts the
+          upgrades Claude Code often avoids, so half its failures (15 of 30) are
+          code incompatibilities, 13 of them on major upgrades, such as Spring 6's
+          move from <code>javax.*</code> to <code>jakarta.*</code>. It also sometimes
+          upgrades more than needed: in two TypeScript repositories, a broad
+          lockfile regeneration moved transitive type definitions beyond what the
+          project's older compiler can parse (6 failures), and its only regression
+          came from a caret range (<code>agenda@^4.0.0</code>) that floated to a new
+          major version of the MongoDB driver.
+        </p>
+        <p>
+          <strong>The package manager bump never repairs what the upgrade
+          breaks.</strong> It always targets the recommended version, but in 75 of
+          its failures the vulnerability stays reachable through another path,
+          mostly in managed builds, where pinning only the named package leaves the
+          rest of its BOM-managed family at old versions.
         </p>
       </div>
     </div>
@@ -157,12 +157,9 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("head-to-head")}
     eyebrow="Head to head"
     title="Four gates, one verdict"
-    description="The Evo Remediation Agent passes every gate on 90.2% of upgrades, 12.7 percentage points more than Claude Code + Snyk scan and 30.6 more than Claude Code unaided, and fixes 95.9% of vulnerability instances; the Snyk scan and target version raise Claude Code's PASS rate by 17.9 points. The Evo Remediation Agent never leaves dependencies unresolvable and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code's, partly because Claude Code often does not take the upgrade. On dependencies, build and tests combined the agents are level; what separates them is whether the vulnerability is fixed. The package manager bump, which applies Snyk's recommended upgrade and nothing else, trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks."
+    description="The Evo Remediation Agent passes every gate on 90.2% of upgrades, 12.7 percentage points more than Claude Code + Snyk scan and 30.6 more than Claude Code unaided, and fixes 95.9% of vulnerability instances; the Snyk scan and recommended upgrade raise Claude Code's PASS rate by 17.9 points. The individual gates show a trade-off: the Evo Remediation Agent never leaves dependencies unresolved and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code + Snyk scan's by 1.3 and 3.6 points. On dependency resolution, build and tests combined, the agents perform similarly; Claude Code's high build and test rates partly reflect avoidance, since an untouched dependency rarely breaks anything. The package manager bump trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks. Per-repository (macro) PASS rates give the same ranking."
   >
-    <div class="stack">
-      <GateScorecard />
-      <RepoLevelTable />
-    </div>
+    <GateScorecard />
   </ResultSection>
   <ResultSection
     id="gates"
@@ -184,38 +181,35 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("paired")}
     eyebrow="Paired comparisons"
     title="The same upgrades, the same ranking"
-    description="Matched on the same upgrades, the Evo Remediation Agent passes 46 that Claude Code + Snyk scan fails and fails 7 that it passes. The Snyk scan and target version help Claude Code on 64 upgrades and hurt it on 9. All three paired bootstrap intervals exclude zero."
+    description="Matched on the same upgrades, the Evo Remediation Agent passes 46 that Claude Code + Snyk scan fails and fails 7 that it passes, 39 more PASSes in all. The Snyk scan and recommended upgrade help Claude Code on 64 upgrades and hurt it on 9. Every pairwise difference in macro PASS rate between the agents is statistically significant under a cluster bootstrap over repositories."
   >
     <PairedComparison />
   </ResultSection>
   <ResultSection
     id="advice"
     index={n("advice")}
-    eyebrow="Beyond Snyk's advice"
-    title="The agents differ where the advice is not enough"
-    description={`The package manager bump sets the named package to Snyk's recommended version with the project's own package manager and changes nothing else. It passes ${baseline.passed} of the ${baseline.attempts} upgrades. All three agents pass 86–99% of those, but 36–82% of the other 163, which supply 34 of the Evo Remediation Agent's 39 extra PASSes over Claude Code + Snyk scan. The agents rarely break what the bump solves: the Evo Remediation Agent's only regression is a caret-range upgrade, and 24 of Claude Code's 26 leave the vulnerability in place. Claude Code unaided, which must find a fixed version itself, loses 14% of the upgrades the advice alone solves, each time by leaving the vulnerability in place.`}
+    eyebrow="Snyk's guidance"
+    title="Snyk's guidance secures the easy half; the agents separate on the rest"
+    description={`Neither Snyk's guidance nor an agent is enough on its own. Applied by the package manager bump, without an agent, Snyk's recommended upgrade passes ${baseline.passed} of the ${baseline.attempts} upgrades (46.9%); Claude Code without Snyk passes 59.6%; given the Snyk scan and recommended upgrade, Claude Code passes 77.5%. On the ${baseline.passed} Snyk-advice-solvable upgrades, what matters is knowing which version is safe: with Snyk's guidance the agents rarely regress (Claude Code + Snyk scan on 6 upgrades, the Evo Remediation Agent on 1), while Claude Code unaided regresses on 20, in 15 of them by upgrading to a version Snyk still flags. On the other 163, which need more than a version bump, the agent decides the outcome, and these upgrades supply 34 of the Evo Remediation Agent's 39 extra PASSes over Claude Code + Snyk scan.`}
   >
     <div class="stack">
       <AdviceSplit />
       <div class="notes prose reading-width">
         <p>
-          <strong>Where the lead comes from.</strong> On the upgrades the bump
-          fails, the Evo Remediation Agent's lead over Claude Code + Snyk scan is
-          mostly on declared packages (87 value-add upgrades against 58). On
-          managed pins, where an agent can pass by also moving the BOM's family
-          (every Jackson artifact rather than only jackson-databind), the two are
-          close (47 and 42). Test edits, which the task allows for adapting tests
-          to breaking changes, occur in 35 of the Evo Remediation Agent's 134
-          value-add upgrades, and in 17 and 11 of Claude Code's.
+          <strong>Web search does not reliably find a safe version.</strong>
+          {" "}Finding a fixed version by web search, for example on OSV, proved
+          unreliable; an SCA scan names the fixed version and can confirm the
+          upgrade. Across all upgrades, Claude Code unaided chose a still-vulnerable
+          version 64 times, Claude Code + Snyk scan 13 times. Vulnerability
+          databases can disagree on which version fixes a vulnerability, and the
+          rescan uses Snyk Open Source, so part of the gap may reflect such
+          disagreement.
         </p>
         <p>
-          <strong>Why the bump fails.</strong> It always reaches the recommended
-          version, but in managed builds pinning only the named package leaves the
-          BOM-managed transitive packages at their old versions: it passes
-          {" "}{share(baseline.managedPins)} of its managed pins, against
-          {" "}{share(baseline.otherPins)} of the other upgrades. Counting the 145
-          upgrades that either Python pinning policy solves lowers each agent's
-          value-add by one and leaves its regressions unchanged.
+          <strong>A deliberately simple baseline.</strong> The package manager bump
+          never moves a BOM or parent or tries another version, so the split is a
+          lower bound on what mechanical upgrading can solve, and the agents' gains
+          overstate what only an agent can do.
         </p>
       </div>
     </div>
@@ -225,7 +219,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("jump")}
     eyebrow="Size of the version jump"
     title="Major upgrades separate the agents most"
-    description={`Relative to non-major upgrades, major ones cost the Evo Remediation Agent 16 PASS points, and Claude Code + Snyk scan and Claude Code unaided 27 and 28. The package manager bump shows the same gradient more steeply, passing ${bumpJumps}. Of the Evo Remediation Agent's 277 PASSes, 59 edited application source, 49 of them on major upgrades: 52% of its 95 major PASSes, against 5% of its 182 non-major ones. Across agents, 238 of the 307 upgrades were passed by at least one agent without editing application source.`}
+    description={`PASS rates fall from 96%, 88% and 70% on the 189 non-major upgrades to 81%, 61% and 42% on the 118 major ones for the Evo Remediation Agent, Claude Code + Snyk scan and Claude Code unaided. The package manager bump passes ${bumpJump("patch")}, ${bumpJump("minor", "minor0x")} and ${bumpJump("major")} of patch, minor (including 0.x) and major upgrades. Major upgrades are where code changes are needed: the Evo Remediation Agent edited non-test application source in 52% of its 95 major PASSes, against 5% of its 182 non-major ones; Claude Code did so less often (Claude Code + Snyk scan 32% and 3%, Claude Code unaided 24% and 2%). They are also where headroom remains: 23 upgrades in seven Maven and npm repositories defeated all three agents, mostly major framework migrations (Spring 5 to 6 or 7, Spring Boot 2 to 3 or 4, Dropwizard 2 to 5). Smaller jumps are not always safe: 10 of the 189 patch and minor upgrades broke the build or tests for at least one agent, for example logback-classic 1.2.11 to 1.6.3 and flask 3.0.3 to 3.1.3.`}
   >
     <UpgradeJump />
   </ResultSection>
@@ -234,7 +228,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("ecosystems")}
     eyebrow="By package manager"
     title="The Evo Remediation Agent is at or above both in every package manager"
-    description="Per-repository PASS rate in each package manager. The Evo Remediation Agent ties Claude Code + Snyk scan on pip and Yarn, with the largest gaps in Poetry, Maven and, against Claude Code + Snyk scan, npm. Some gaps come from single repositories: without express-typescript-starter, pooled npm rates are 92%, 87% and 85%, and 23 of Claude Code unaided's 28 Gradle failures come from one repository."
+    description="Per-repository (macro) PASS rate in each package manager, from the harness reports. The Evo Remediation Agent's macro PASS rate is at or above both Claude Code agents in every package manager, although several have only three repositories, so per-package-manager estimates are imprecise."
   >
     <EcosystemComparison />
   </ResultSection>
@@ -243,7 +237,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("integrity")}
     eyebrow="Integrity"
     title="What else the harness recorded"
-    description="Signals recorded alongside the gates, for the three agents. Upgrades can pull in packages with their own known vulnerabilities; PASS does not penalise them, and they appear in more Evo Remediation Agent attempts than Claude Code attempts. Rows marked in amber deserve a closer look."
+    description="Signals recorded alongside the gates, for the three agents. Upgrades can pull in packages with their own known vulnerabilities, which PASS does not penalise: post-fix scans show new instances in 62 Evo Remediation Agent attempts (across 16 repositories), 30 Claude Code + Snyk scan and 33 Claude Code unaided attempts. Rows marked in amber deserve a closer look."
   >
     <IntegrityTable />
   </ResultSection>

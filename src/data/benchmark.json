@@ -13,12 +13,12 @@
   },
   "researchQuestion": "Can an AI agent upgrade a vulnerable dependency without breaking the project?",
   "studyLabel": "A benchmark for fixing vulnerable dependencies in real projects while keeping the build and tests green",
-  "summary": "VulnBump is 307 upgrade tasks covering 2,066 fixable vulnerabilities in 43 repositories across six package managers, matched to Snyk production vulnerability distributions. An upgrade passes only if, in a fresh container, dependencies resolve, a rescan shows the targeted vulnerabilities fixed, the project builds, and every previously passing test still passes. All three agents use the same model, Claude Sonnet 5.5, and a non-agent baseline that only applies Snyk's recommended version shows how much of the work that advice already does.",
+  "summary": "VulnBump is 307 upgrade tasks covering 2,066 fixable vulnerabilities in 43 repositories across six package managers, matched to Snyk Open Source production vulnerability distributions. An upgrade passes only if, in a fresh container, dependencies resolve, a rescan shows the targeted vulnerabilities fixed, the project builds, and every previously passing test still passes. All three agents use the same model, Claude Sonnet 5.5, and a non-agentic baseline that only applies Snyk's recommended version shows how much of the work that advice already does.",
   "links": {
     "paper": null,
     "publication": null,
     "github": "https://github.com/snyk-labs/snyk-vulnbump",
-    "harness": null
+    "harness": "https://github.com/snyk-labs/snyk-vulnbump"
   },
   "scope": [
     {
@@ -51,41 +51,47 @@
       "tone": "strong"
     },
     {
-      "value": "82.2%",
-      "label": "of the 163 upgrades that Snyk's recommended version alone does not solve were passed by the Evo Remediation Agent, against 61.3% and 36.2% for Claude Code.",
-      "href": "/results#advice",
-      "tone": "strong"
-    },
-    {
-      "value": "46.9%",
-      "label": "of upgrades pass when only Snyk's recommended version is applied. This non-agent baseline trails every agent on every gate.",
+      "value": "+17.9 pts",
+      "label": "from Snyk's scan and recommended upgrade. Applied alone, Snyk's version passes 46.9% of upgrades and Claude Code alone 59.6%; together, as Claude Code + Snyk scan, they pass 77.5%.",
       "href": "/results#advice",
       "tone": "contrast"
+    },
+    {
+      "value": "82.2%",
+      "label": "of the 163 upgrades that Snyk's recommended version alone does not solve were passed by the Evo Remediation Agent, against 61.3% and 36.2% for Claude Code. Knowing the target is not enough.",
+      "href": "/results#advice",
+      "tone": "strong"
     }
   ],
   "findings": [
     {
-      "title": "A purpose-built engine leads, robustly",
-      "summary": "The Evo Remediation Agent passes 90.2% of upgrades, against 77.5% for Claude Code + Snyk scan and 59.6% for Claude Code unaided. The gap lies in how often every targeted vulnerability is fixed: 97.1%, 83.7% and 63.5%. The ranking holds per repository (macro PASS rates 0.93, 0.80 and 0.68) and in every paired comparison.",
-      "caveat": "One run per agent, each upgrade attempted on its own. All three keep 92.8–93.8% of projects working, so a breakage-only check would not separate them.",
+      "title": "Only the vulnerability check separates the agents",
+      "summary": "On dependency resolution, build and tests alone, the three agents perform similarly (92.8–93.8%). With the rescan, the Evo Remediation Agent passes 90.2% of upgrades, Claude Code + Snyk scan 77.5% and Claude Code unaided 59.6%, a ranking that holds per repository.",
+      "caveat": "Each agent ran once per upgrade, so the significance tests capture variation across repositories, not reruns.",
       "href": "/results#head-to-head"
     },
     {
-      "title": "The agents differ mainly where Snyk's advice is not enough",
-      "summary": "Applying only Snyk's recommended version passes 144 of the 307 upgrades. All three agents pass 86–99% of those, but on the other 163 the Evo Remediation Agent passes 82.2%, Claude Code + Snyk scan 61.3% and Claude Code unaided 36.2%.",
-      "caveat": "The package manager bump never moves a BOM or parent or tries another version, so it is a lower bound on what mechanical upgrading can solve, and value-add an upper bound on what an agent contributes beyond it.",
+      "title": "An SCA scanner is a key tool for agents fixing vulnerabilities",
+      "summary": "Snyk's recommended upgrade applied by the package manager bump passes 46.9% of upgrades and Claude Code without Snyk 59.6%; together, as Claude Code + Snyk scan, they pass 77.5%. Without an SCA scan, Claude Code regresses on 20 of the 144 upgrades the bump solves, 15 of them by choosing a version Snyk still flags: web search alone does not reliably find a safe version.",
+      "caveat": "The rescan uses Snyk's vulnerability database, which Claude Code unaided cannot consult. Databases can disagree on which version fixes a vulnerability, so part of the gap may reflect such disagreement.",
+      "href": "/results#advice"
+    },
+    {
+      "title": "Knowing the target is not enough",
+      "summary": "Given the same Snyk findings and model, the Evo Remediation Agent's purpose-built harness passes 12.7 percentage points more than Claude Code + Snyk scan, mostly on the 163 upgrades the package manager bump fails, where the Evo Remediation Agent passes 82.2%, Claude Code + Snyk scan 61.3% and Claude Code unaided 36.2%.",
+      "caveat": "The Evo Remediation Agent combines Snyk intelligence with a loop that builds, tests and repairs, and the setup cannot isolate which component makes the difference.",
       "href": "/results#advice"
     },
     {
       "title": "The agents fail in opposite ways",
-      "summary": "Claude Code mostly leaves the vulnerability in place, often by staying within the current major version or pinning transitive packages: the rescan is the first failed gate in 48 of Claude Code + Snyk scan's 69 failures and 107 of Claude Code unaided's 124. The Evo Remediation Agent usually lands the upgrade; 21 of its 30 failures break the build or tests, mostly in major framework migrations.",
-      "caveat": "Without Snyk, Claude Code claimed fixes that the rescan still found in 70 of its 124 failures. Root causes were assigned by heuristics and one annotator.",
+      "summary": "Claude Code mostly stops short and fails silently: the vulnerability remains in 107 of Claude Code unaided's 124 failures, 70 of which it claimed it fixed, and in 48 of Claude Code + Snyk scan's 69. The Evo Remediation Agent usually lands the upgrade, so 21 of its 30 failures break the build or tests, where the project's own checks catch them.",
+      "caveat": "Single repositories dominate some failure categories: one accounts for 28 of the 30 Claude Code dependency-gate failures, so pooled failure counts lean on a few projects.",
       "href": "/results#failures"
     },
     {
-      "title": "Major jumps and transitive vulnerabilities are hardest",
-      "summary": "Major upgrades cost the Evo Remediation Agent 16 PASS points relative to non-major ones, and Claude Code 27–28. About half of its major PASSes (52% of 95) edited application source. Transitive vulnerabilities, 70% of fixable instances, show the widest gap: 0.73, 0.59 and 0.28 fixed by a PASS.",
-      "caveat": "The jump is that of the recommended upgrade; per-vulnerability rates use the smallest jump to a fixed release.",
+      "title": "Major framework migrations remain hard",
+      "summary": "PASS rates fall from 96%, 88% and 70% on non-major upgrades to 81%, 61% and 42% on major ones for the Evo Remediation Agent, Claude Code + Snyk scan and Claude Code unaided. Half of the Evo Remediation Agent's major PASSes edit application source, and 23 upgrades, mostly Spring, Spring Boot and Dropwizard migrations, defeat all three agents.",
+      "caveat": "The jump is that of the recommended upgrade. Smaller jumps are not always safe: 10 of the 189 patch and minor upgrades broke the build or tests for at least one agent.",
       "href": "/results#jump"
     }
   ],
@@ -152,7 +158,7 @@
       "label": "Targeted vulnerabilities fixed",
       "kind": "gate",
       "basis": "attempts",
-      "description": "A post-fix Snyk rescan covers every target manifest and no longer finds the upgrade's targeted vulnerabilities."
+      "description": "A post-fix Snyk rescan of every target manifest no longer finds the targeted vulnerabilities through the upgraded package or any newly introduced dependency path."
     },
     {
       "key": "cleanBuild",
@@ -257,7 +263,7 @@
     {
       "id": "severity",
       "label": "Severity",
-      "note": "Evaluation-time scans rate none of the fixable instances critical, even those with CVSS ≥ 9.0."
+      "note": "Evaluation-time scans rate none of the fixable instances critical."
     }
   ],
   "failureReasons": [
@@ -647,28 +653,13 @@
         "newVulnAttempts": 33
       },
       "green": 288,
-      "macro": {
-        "rate": 0.68,
-        "ci": [
-          0.582,
-          0.77
-        ]
-      },
+      "macro": 0.68,
       "gates": {
         "depsResolve": 293,
         "vulnsFixed": 195,
         "cleanBuild": 302,
         "testsPass": 303
       },
-      "macroFixed": {
-        "rate": 0.807,
-        "ci": [
-          0.722,
-          0.882
-        ]
-      },
-      "reposAllPass": 15,
-      "reposNonePass": 3,
       "jumps": [
         {
           "id": "patch",
@@ -991,28 +982,13 @@
         "newVulnAttempts": 30
       },
       "green": 285,
-      "macro": {
-        "rate": 0.801,
-        "ci": [
-          0.71,
-          0.879
-        ]
-      },
+      "macro": 0.801,
       "gates": {
         "depsResolve": 291,
         "vulnsFixed": 257,
         "cleanBuild": 301,
         "testsPass": 304
       },
-      "macroFixed": {
-        "rate": 0.901,
-        "ci": [
-          0.841,
-          0.951
-        ]
-      },
-      "reposAllPass": 22,
-      "reposNonePass": 2,
       "jumps": [
         {
           "id": "patch",
@@ -1340,28 +1316,13 @@
         "newVulnAttempts": 62
       },
       "green": 285,
-      "macro": {
-        "rate": 0.931,
-        "ci": [
-          0.881,
-          0.971
-        ]
-      },
+      "macro": 0.931,
       "gates": {
         "depsResolve": 307,
         "vulnsFixed": 298,
         "cleanBuild": 297,
         "testsPass": 293
       },
-      "macroFixed": {
-        "rate": 0.976,
-        "ci": [
-          0.952,
-          0.994
-        ]
-      },
-      "reposAllPass": 32,
-      "reposNonePass": 0,
       "jumps": [
         {
           "id": "patch",
@@ -1499,7 +1460,7 @@
         1,
         252
       ],
-      "medianTests": 61,
+      "medianTests": 88,
       "popular": 19
     },
     "selectionNote": "Selected to match Snyk production data in direct versus transitive share, vulnerabilities per repository, severity and fix difficulty. Package managers are weighted so that each has enough cases to report on, rather than strictly in proportion to production.",
@@ -1571,7 +1532,7 @@
       {
         "id": "direct",
         "label": "Direct dependency share",
-        "note": "Share of findings whose vulnerable package is declared in the manifest. Production comes from a 1% project sample (4.2 million findings, 3.9 million of them in the six package managers).",
+        "note": "Share of findings whose vulnerable package is declared in the manifest. Production comes from a 1% random sample of projects (4.2 million findings).",
         "categories": [
           "Maven",
           "Gradle",
@@ -1604,7 +1565,7 @@
       {
         "id": "difficulty",
         "label": "Fix difficulty",
-        "note": "Smallest semantic-versioning jump to a fixed release. Production is weighted by each language's share of findings (Java 40/33/26, JavaScript 27/48/25, Python 21/50/29); VulnBump covers the 29 repositories classified at mining time.",
+        "note": "Smallest semantic-versioning jump to a fixed release. Production covers Java, JavaScript and Python findings (patch/minor/major 40/33/26% in Java, 27/48/25% in JavaScript, 21/50/29% in Python).",
         "categories": [
           "Patch",
           "Minor",
@@ -1616,8 +1577,8 @@
           26
         ],
         "benchmark": [
-          33,
-          42,
+          34,
+          41,
           24
         ],
         "decimals": [
@@ -1628,17 +1589,19 @@
     ],
     "perProject": {
       "label": "Vulnerabilities per project",
-      "note": "Bar: P25 to P75 · tick: median · whisker: P90.",
+      "note": "Bar: P25 to P75 · tick: median · whiskers: P10 to P90.",
       "groups": [
         {
           "label": "Java",
           "production": [
+            3,
             13,
             51,
             114,
             163
           ],
           "benchmark": [
+            2,
             13,
             40,
             92,
@@ -1648,12 +1611,14 @@
         {
           "label": "JavaScript",
           "production": [
+            2,
             6,
             20,
             49,
             85
           ],
           "benchmark": [
+            1.6,
             4.5,
             14,
             73.8,
@@ -1663,12 +1628,14 @@
         {
           "label": "Python",
           "production": [
+            2,
             5,
             15,
             43,
             78
           ],
           "benchmark": [
+            10.7,
             23,
             29,
             36,
@@ -1685,14 +1652,39 @@
   "paper": {
     "title": "VulnBump: A Benchmark for Fixing Vulnerable Dependencies in Real Projects While Keeping the Build and Tests Green",
     "authors": [
-      "Gabija Pasiunaite",
-      "Ryan McMorrow",
-      "Brian Clark",
-      "Liran Tal",
-      "Luke Tu"
+      {
+        "name": "Gabija Pasiunaite",
+        "affiliations": [
+          "Snyk"
+        ]
+      },
+      {
+        "name": "Ryan McMorrow",
+        "affiliations": [
+          "Snyk"
+        ]
+      },
+      {
+        "name": "Brian Clark",
+        "affiliations": [
+          "Snyk"
+        ]
+      },
+      {
+        "name": "Liran Tal",
+        "affiliations": [
+          "Snyk"
+        ]
+      },
+      {
+        "name": "Luke Tu",
+        "affiliations": [
+          "Brown University",
+          "Snyk"
+        ]
+      }
     ],
-    "affiliation": "Snyk",
-    "date": "2026-10-09"
+    "date": "2026-10-12"
   },
   "production": {
     "period": "April–September 2026",
@@ -1701,7 +1693,8 @@
     "fixedVersionShare": 94.0,
     "fixPathShare": 93.7,
     "openShare": 89,
-    "resolvedShare": 10
+    "resolvedShare": 10,
+    "ignoredShare": 1
   },
   "jumpCategories": [
     {
@@ -1723,7 +1716,7 @@
     }
   ],
   "rootCauses": {
-    "note": "One root cause per failed attempt, grouped by cause rather than by first failed gate, assigned from each attempt's report, diff and logs by rule-based heuristics and one annotator, with no agreement measure.",
+    "note": "One root cause per failed attempt, grouped by cause rather than by first failed gate, so counts can differ from the first failed gates above.",
     "groups": [
       {
         "label": "Vulnerability remediation",
@@ -1861,43 +1854,19 @@
         "a": "evo-remediation-agent",
         "b": "claude-code-snyk",
         "aOnly": 46,
-        "bOnly": 7,
-        "p": 4e-08,
-        "macroDiff": 0.13,
-        "ci": [
-          0.062,
-          0.214
-        ],
-        "reposAhead": 16,
-        "reposBehind": 2
+        "bOnly": 7
       },
       {
         "a": "evo-remediation-agent",
         "b": "claude-code",
         "aOnly": 96,
-        "bOnly": 2,
-        "p": 3.1e-26,
-        "macroDiff": 0.251,
-        "ci": [
-          0.17,
-          0.341
-        ],
-        "reposAhead": null,
-        "reposBehind": null
+        "bOnly": 2
       },
       {
         "a": "claude-code-snyk",
         "b": "claude-code",
         "aOnly": 64,
-        "bOnly": 9,
-        "p": 2.4e-11,
-        "macroDiff": 0.121,
-        "ci": [
-          0.033,
-          0.203
-        ],
-        "reposAhead": null,
-        "reposBehind": null
+        "bOnly": 9
       }
     ],
     "agreement": [
@@ -1966,7 +1935,7 @@
       {
         "name": "BUMP",
         "ecosystems": "Maven",
-        "size": "571 updates, 153 projects",
+        "size": "153 repositories, 571 upgrades",
         "trigger": "Breaking update",
         "marks": [
           "full",
@@ -1979,7 +1948,7 @@
       {
         "name": "BigBag",
         "ecosystems": "Maven",
-        "size": "157 updates (BUMP subset)",
+        "size": "157 upgrades",
         "trigger": "Breaking update",
         "marks": [
           "full",
@@ -1992,7 +1961,7 @@
       {
         "name": "DepRepair",
         "ecosystems": "Maven, npm, Cargo, PyPI",
-        "size": "95 instances",
+        "size": "95 upgrades",
         "trigger": "Major migration",
         "marks": [
           "full",
@@ -2005,7 +1974,7 @@
       {
         "name": "DepBench",
         "ecosystems": "npm/Yarn, Maven, Go, Cargo, Python",
-        "size": "203 tasks",
+        "size": "203 upgrades",
         "trigger": "Bot upgrade PR",
         "marks": [
           "full",
@@ -2019,7 +1988,7 @@
       {
         "name": "CORAL",
         "ecosystems": "Maven",
-        "size": "301 projects, 750 unique CVEs",
+        "size": "301 repositories, 750 unique CVEs",
         "trigger": "CVE",
         "marks": [
           "full",
@@ -2032,7 +2001,7 @@
       {
         "name": "REQBench",
         "ecosystems": "pip",
-        "size": "2,095 scenarios, 34 projects, 20 libraries",
+        "size": "34 repositories, 2,095 upgrades",
         "trigger": "Library upgrade",
         "marks": [
           "full",
@@ -2058,7 +2027,7 @@
       {
         "name": "VulnBump",
         "ecosystems": "Maven, Gradle, npm, Yarn, pip, Poetry",
-        "size": "307 upgrades, 43 projects",
+        "size": "43 repositories, 307 upgrades, 2,066 vulnerabilities",
         "trigger": "Vulnerability fix path",
         "marks": [
           "full",
@@ -2076,7 +2045,7 @@
     "id": "package-manager-bump",
     "label": "Package manager bump",
     "subtitle": "Snyk's version, no agent",
-    "description": "The non-agent baseline: applies Snyk's recommended upgrade and nothing else. It uses no model, edits no code or tests, and never tries another version.",
+    "description": "The non-agentic baseline: applies Snyk's recommended upgrade and nothing else. It uses no model, edits no code or tests, and never tries another version.",
     "runDate": "2026-10-08",
     "attempts": 307,
     "repos": 43,
@@ -2099,28 +2068,7 @@
       "allGates": 0.469055,
       "instancesFixed": 0.565344
     },
-    "macro": {
-      "rate": 0.513,
-      "ci": [
-        0.397,
-        0.623
-      ]
-    },
-    "macroFixed": {
-      "rate": 0.725,
-      "ci": [
-        0.611,
-        0.832
-      ]
-    },
-    "reposAllPass": 10,
-    "reposNonePass": 10,
-    "remaining": [
-      0,
-      469,
-      341,
-      88
-    ],
+    "macro": 0.513,
     "flow": [
       307,
       253,
@@ -2130,36 +2078,56 @@
     ],
     "jumps": [
       {
-        "label": "Patch",
+        "id": "patch",
         "attempts": 57,
         "passed": 38
       },
       {
-        "label": "Minor (including 0.x)",
-        "attempts": 132,
-        "passed": 76
+        "id": "minor",
+        "attempts": 123,
+        "passed": 73
       },
       {
-        "label": "Major",
+        "id": "major",
         "attempts": 118,
         "passed": 30
+      },
+      {
+        "id": "minor0x",
+        "attempts": 9,
+        "passed": 3
       }
     ],
-    "transitiveOnly": {
-      "attempts": 112,
-      "passed": 39
-    },
-    "otherDependency": {
-      "attempts": 195,
-      "passed": 105
-    },
-    "managedPins": {
-      "attempts": 76,
-      "passed": 21
-    },
-    "otherPins": {
-      "attempts": 231,
-      "passed": 123
+    "breakdowns": {
+      "upgradeSize": [
+        {
+          "label": "Patch",
+          "n": 713,
+          "passRate": 0.28
+        },
+        {
+          "label": "Minor",
+          "n": 782,
+          "passRate": 0.39
+        },
+        {
+          "label": "Major",
+          "n": 520,
+          "passRate": 0.17
+        }
+      ],
+      "dependency": [
+        {
+          "label": "Direct",
+          "n": 617,
+          "passRate": 0.41
+        },
+        {
+          "label": "Transitive",
+          "n": 1449,
+          "passRate": 0.24
+        }
+      ]
     }
   },
   "adviceSplit": {
@@ -2169,74 +2137,23 @@
       {
         "id": "claude-code",
         "solvablePassed": 124,
-        "solvableMacro": {
-          "rate": 0.918,
-          "ci": [
-            0.859,
-            0.968
-          ]
-        },
         "otherPassed": 59,
-        "otherMacro": {
-          "rate": 0.413,
-          "ci": [
-            0.288,
-            0.543
-          ]
-        },
         "regressions": 20,
-        "valueAdd": 59,
-        "valueAddTestEdits": 11,
-        "valueAddManagedPins": 20,
-        "p": 1.3e-05
+        "gains": 59
       },
       {
         "id": "claude-code-snyk",
         "solvablePassed": 138,
-        "solvableMacro": {
-          "rate": 0.986,
-          "ci": [
-            0.968,
-            1.0
-          ]
-        },
         "otherPassed": 100,
-        "otherMacro": {
-          "rate": 0.647,
-          "ci": [
-            0.518,
-            0.768
-          ]
-        },
         "regressions": 6,
-        "valueAdd": 100,
-        "valueAddTestEdits": 17,
-        "valueAddManagedPins": 42,
-        "p": 4.5e-23
+        "gains": 100
       },
       {
         "id": "evo-remediation-agent",
         "solvablePassed": 143,
-        "solvableMacro": {
-          "rate": 0.997,
-          "ci": [
-            0.99,
-            1.0
-          ]
-        },
         "otherPassed": 134,
-        "otherMacro": {
-          "rate": 0.87,
-          "ci": [
-            0.791,
-            0.94
-          ]
-        },
         "regressions": 1,
-        "valueAdd": 134,
-        "valueAddTestEdits": 35,
-        "valueAddManagedPins": 47,
-        "p": 6.2e-39
+        "gains": 134
       }
     ]
   }

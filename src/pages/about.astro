@@ -2,13 +2,13 @@
 import PageHero from "../components/site/PageHero.astro";
 import { benchmark, site } from "../data";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { indexLabel } from "../lib/words";
+import { authorLine, indexLabel } from "../lib/words";
 
 const principles = [
   ["Fixed targets", "Every configuration attempts the same vulnerabilities in the same repository state."],
   ["Verified outcomes", "A verifier that never trusts the agent's report checks the fix in a fresh container."],
   ["A joint verdict", "An upgrade passes only if the vulnerability is fixed and the build and tests still pass."],
-  ["Honest uncertainty", "Repository-level intervals and paired tests sit beside every rate; repeated runs are next."],
+  ["Honest uncertainty", "Per-repository rates and repository-clustered significance tests sit beside the pooled rates; repeated runs are next."],
   ["Reproducible data", "Versioned results and definitions remain downloadable."],
 ];
 ---
@@ -33,23 +33,23 @@ const principles = [
         <p>
           The first release compares Snyk's Evo Remediation Agent with Claude
           Code, with and without a Snyk scan, on the same 307 upgrades across 43
-          real repositories, all on the same model, alongside a non-agent
+          real repositories, all on the same model, alongside a non-agentic
           baseline that only applies Snyk's recommended version. Each release
           defines its repositories, agents, and gates up front and publishes the
           data behind every chart.
         </p>
         <p>
           It is a companion to
-          <a href="https://vulnbench.com/">Snyk VulnBench</a>, which studies
+          {" "}<a href="https://vulnbench.com/">Snyk VulnBench</a>, which studies
           how reliably AI systems find vulnerabilities.
         </p>
         <p>
           The benchmark is described in {benchmark.paper.title}, by
-          {" "}{benchmark.paper.authors.join(", ")} ({benchmark.paper.affiliation}).
+          {" "}{authorLine(benchmark.paper.authors)}.
         </p>
         <p>
           Questions and corrections are welcome via the
-          <a href={site.repository}>website repository</a>.
+          {" "}<a href={site.repository}>website repository</a>.
         </p>
       </div>
 

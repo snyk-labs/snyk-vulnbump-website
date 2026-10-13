@@ -60,30 +60,7 @@ export function formatDate(isoDate: string): string {
   }).format(new Date(`${isoDate.slice(0, 10)}T00:00:00Z`));
 }
 
-const superscripts: Record<string, string> = {
-  "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
-};
-
-/** 0.9306 → "0.931" (macro rates are reported as fractions to three places). */
+/** 0.9306 → "0.931" (per-package-manager macro rates, to three places). */
 export function formatFraction(value: number, digits = 3): string {
   return value.toFixed(digits);
-}
-
-/** 0.13 → "+0.130" */
-export function formatSignedFraction(value: number, digits = 3): string {
-  return `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(digits)}`;
-}
-
-/** { rate: 0.931, ci: [0.881, 0.971] } → "0.931 [0.881, 0.971]" */
-export function formatMacro({ rate, ci }: { rate: number; ci: readonly [number, number] }): string {
-  return `${formatFraction(rate)} [${formatFraction(ci[0])}, ${formatFraction(ci[1])}]`;
-}
-
-/** 4.0e-8 → "4.0 × 10⁻⁸" */
-export function formatPValue(p: number): string {
-  const exponent = Math.floor(Math.log10(p));
-  if (exponent >= -2) return p.toFixed(3);
-  const mantissa = (p / 10 ** exponent).toFixed(1);
-  const sup = String(exponent).split("").map((ch) => superscripts[ch] ?? ch).join("");
-  return `${mantissa} × 10${sup}`;
 }

@@ -1,13 +1,13 @@
 ---
 import { benchmark, configById } from "../../data";
 import { configColors } from "../../lib/colors";
-import { formatInteger, formatMacro, formatPercent, formatPValue, formatRatio } from "../../lib/format";
+import { formatInteger, formatPercent, formatRatio } from "../../lib/format";
 
 /*
- * Agents paired with the package manager bump (paper Table 4). The upgrades
+ * Agents paired with the package manager bump (paper Table 3). The upgrades
  * the bump passes are Snyk-advice-solvable; on those an agent can only keep
  * or lose an easy fix (regressions). On the rest it must add something the
- * advice alone does not (value-add).
+ * advice alone does not (gains).
  */
 const { adviceSplit, configurations, baseline, release } = benchmark;
 const colors = configColors(configurations);
@@ -19,28 +19,24 @@ const panels = [
     title: "Snyk-advice-solvable",
     note: `The ${adviceSplit.solvable} upgrades the ${baseline.label.toLowerCase()} passes. Here an agent can only keep or lose an easy fix.`,
     total: adviceSplit.solvable,
-    pick: (a: (typeof agents)[number]) => ({ passed: a.solvablePassed, macro: a.solvableMacro }),
+    pick: (a: (typeof agents)[number]) => a.solvablePassed,
   },
   {
     id: "other",
     title: "Other upgrades",
     note: `The ${adviceSplit.other} upgrades it fails. Here an agent must add something the advice alone does not.`,
     total: adviceSplit.other,
-    pick: (a: (typeof agents)[number]) => ({ passed: a.otherPassed, macro: a.otherMacro }),
+    pick: (a: (typeof agents)[number]) => a.otherPassed,
   },
 ];
 
 const rows: {
   label: string;
-  better?: "higher" | "lower";
-  sub?: boolean;
+  better: "higher" | "lower";
   cell: (a: (typeof agents)[number]) => string;
 }[] = [
   { label: "Regressions (the bump passes, the agent fails)", better: "lower", cell: (a) => formatInteger(a.regressions) },
-  { label: "Value-add (the agent passes, the bump fails)", better: "higher", cell: (a) => formatInteger(a.valueAdd) },
-  { label: "with test edits", sub: true, cell: (a) => formatInteger(a.valueAddTestEdits) },
-  { label: "on managed pins", sub: true, cell: (a) => formatInteger(a.valueAddManagedPins) },
-  { label: "Exact McNemar p, value-add against regressions", cell: (a) => formatPValue(a.p) },
+  { label: "Gains (the agent passes, the bump fails)", better: "higher", cell: (a) => formatInteger(a.gains) },
 ];
 ---
 
@@ -67,7 +63,7 @@ const rows: {
           <p class="note">{panel.note}</p>
           <ul class="bars">
             {agents.map((a) => {
-              const { passed, macro } = panel.pick(a);
+              const passed = panel.pick(a);
               const rate = passed / panel.total;
               return (
                 <li aria-label={`${a.config.label}: ${formatPercent(rate)}, ${formatRatio(passed, panel.total)}`}>
@@ -76,9 +72,7 @@ const rows: {
                     <span class="bar" style={`--value: ${rate}; background: ${colors[a.config.id]}`} />
                     <span class="value metric">{formatPercent(rate)}</span>
                   </span>
-                  <span class="detail metric">
-                    {formatRatio(passed, panel.total)} · macro {formatMacro(macro)}
-                  </span>
+                  <span class="detail metric">{formatRatio(passed, panel.total)}</span>
                 </li>
               );
             })}
@@ -90,7 +84,7 @@ const rows: {
 
   <div class="table-scroll">
     <table class="data-table split">
-      <caption class="visually-hidden">Regressions and value-add against the package manager bump</caption>
+      <caption class="visually-hidden">Regressions and gains against the package manager bump</caption>
       <thead>
         <tr>
           <th scope="col">Against the {baseline.label.toLowerCase()}</th>
@@ -100,15 +94,11 @@ const rows: {
       <tbody>
         {
           rows.map((row) => (
-            <tr class:list={{ sub: row.sub }}>
+            <tr>
               <th scope="row">
                 {row.label}
-                {row.better && (
-                  <>
-                    <span class="visually-hidden">({row.better} is better)</span>
-                    <span class="direction metric" aria-hidden="true">{row.better === "higher" ? "↑" : "↓"}</span>
-                  </>
-                )}
+                <span class="visually-hidden">({row.better} is better)</span>
+                <span class="direction metric" aria-hidden="true">{row.better === "higher" ? "↑" : "↓"}</span>
               </th>
               {agents.map((a) => <td class="num">{row.cell(a)}</td>)}
             </tr>
@@ -120,9 +110,8 @@ const rows: {
 
   <figcaption class="chart__caption">
     <span>Dataset {release.datasetVersion}</span>
-    <span>The split is a lower bound on what mechanical upgrading can solve, so value-add is an upper bound on what an agent adds</span>
-    <span>Managed pins override a version set by a Maven parent or BOM, or by Spring's dependency management</span>
-    <span>Brackets: 95% repository-level bootstrap intervals</span>
+    <span>The split is a lower bound on what mechanical upgrading can solve, so the gains overstate what only an agent can do</span>
+    <span>Per-repository (macro) rates give the same ranking on both sides</span>
   </figcaption>
 </figure>
 
@@ -208,12 +197,6 @@ const rows: {
 
   .split thead th.is-highlight {
     color: #ffffff;
-  }
-
-  .split tr.sub th {
-    padding-left: 1.4rem;
-    color: var(--ink-soft);
-    font-weight: 400;
   }
 
   .direction {

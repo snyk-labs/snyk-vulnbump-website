@@ -82,7 +82,7 @@ interface LeaderboardProps {
 /**
  * Leaderboard (2b design): agents ranked by a sortable column, optionally
  * within one ecosystem. Rates are recomputed from each agent's ecosystem
- * rows. The non-agent baseline is an unranked reference row, shown only for
+ * rows. The non-agentic baseline is an unranked reference row, shown only for
  * all upgrades because it has no per-ecosystem breakdown.
  */
 export function Leaderboard({ agents, baseline, ecosystems, eyebrow, title, titleId }: LeaderboardProps) {
@@ -186,7 +186,7 @@ export function Leaderboard({ agents, baseline, ecosystems, eyebrow, title, titl
               </div>
               <div className="board__cell board__agent" role="rowheader">
                 <strong>{baseline.label}</strong>
-                <span>{baseline.subtitle} · non-agent baseline</span>
+                <span>{baseline.subtitle} · non-agentic baseline</span>
               </div>
               <div className="board__cell board__pass" role="cell">
                 <span className="board__pass-value">{formatPercent(baseline.overall.pass)}</span>

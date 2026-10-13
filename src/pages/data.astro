@@ -10,13 +10,13 @@ const downloads = [
     href: "/data/benchmark.json",
     format: "JSON",
     title: "Full dataset",
-    description: "Every figure and table on this site: gates, repository-level and paired results, root causes, version jumps, package managers, breakdowns, dataset selection, cost, and integrity.",
+    description: "Every figure and table on this site: gates, paired results, the split by Snyk's advice, root causes, version jumps, package managers, breakdowns, dataset selection, cost, and integrity.",
   },
   {
     href: "/data/comparison.csv",
     format: "CSV",
     title: "Head-to-head",
-    description: "One row per agent: gate and PASS rates, macro rates with 95% intervals, gate-by-gate counts, latency, and cost.",
+    description: "One row per harness: gate and PASS rates, the macro PASS rate, gate-by-gate counts, latency, and cost.",
   },
   {
     href: "/data/ecosystems.csv",
@@ -28,7 +28,7 @@ const downloads = [
     href: "/data/breakdowns.csv",
     format: "CSV",
     title: "By vulnerability",
-    description: "Per-vulnerability fix and pass rates by fix difficulty, dependency type, package manager, and severity.",
+    description: "Per-vulnerability fix and pass rates by fix difficulty, dependency type, package manager, and severity, plus the package manager bump's pass rates where the paper reports them.",
   },
 ];
 ---
@@ -72,9 +72,9 @@ const downloads = [
         <p class="eyebrow">License</p>
         <p>
           Research artifacts are provided under the
-          <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>.
+          {" "}<a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>.
           Rates are stored as fractions between 0 and 1. Figures are computed from the three harness reports and match the VulnBump paper; per-attempt records, prompts, logs, and diffs stay in the benchmark repository and are not published here. See the
-          <a href="/methodology">methodology</a> for metric definitions.
+          {" "}<a href="/methodology">methodology</a> for metric definitions.
         </p>
       </div>
 

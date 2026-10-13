@@ -19,7 +19,6 @@ const count = z.number().int().nonnegative();
 const rate = z.number().min(0).max(1);
 const percent = z.number().min(0).max(100);
 const optionalUrl = z.url().nullable();
-const interval = z.tuple([rate, rate]);
 /** Counts keyed by configuration id. */
 const perConfig = z.record(id, count);
 
@@ -66,8 +65,6 @@ const breakdownCategorySchema = z.object({
   passRate: rate,
 });
 
-const macroSchema = z.object({ rate, ci: interval });
-
 export const configurationSchema = z.object({
   id,
   label: nonEmpty,
@@ -101,12 +98,8 @@ export const configurationSchema = z.object({
   /** Attempts passing each gate on its own. */
   gates: z.object({ depsResolve: count, vulnsFixed: count, cleanBuild: count, testsPass: count }),
   values: z.record(key, rate),
-  /** PASS rate averaged per repository, with a repository-level 95% bootstrap interval. */
-  macro: macroSchema,
-  /** Vulnerability-fix rate averaged per repository, with its interval. */
-  macroFixed: macroSchema,
-  reposAllPass: count,
-  reposNonePass: count,
+  /** PASS rate averaged per repository (macro). */
+  macro: rate,
   /** Attempts surviving each entry of `flowSteps`, in order. */
   flow: z.array(count),
   /** Upgrades and PASSes by the size of the recommended version jump. */
@@ -154,11 +147,9 @@ export const configurationSchema = z.object({
   }),
 });
 
-const countPairSchema = z.object({ attempts: count, passed: count });
-
 /**
- * The non-agent baseline (the paper's package manager bump). It ran outside the
- * harness reports, so it carries only what the paper reports for it.
+ * The non-agentic baseline (the paper's package manager bump). It ran outside
+ * the harness reports, so it carries only what the paper reports for it.
  */
 export const baselineSchema = z.object({
   id,
@@ -174,20 +165,15 @@ export const baselineSchema = z.object({
   green: count,
   gates: z.object({ depsResolve: count, vulnsFixed: count, cleanBuild: count, testsPass: count }),
   values: z.record(key, rate),
-  macro: macroSchema,
-  macroFixed: macroSchema,
-  reposAllPass: count,
-  reposNonePass: count,
-  /** Critical / high / medium / low. */
-  remaining: severityCountsSchema,
+  macro: rate,
   flow: z.array(count),
-  /** PASSes by recommended version jump; the paper merges minor and 0.x minor here. */
-  jumps: z.array(z.object({ label: nonEmpty, attempts: count, passed: count })),
-  transitiveOnly: countPairSchema,
-  otherDependency: countPairSchema,
-  /** Pins that override a version set by a Maven parent or BOM, or Spring dependency management. */
-  managedPins: countPairSchema,
-  otherPins: countPairSchema,
+  /** Upgrades and PASSes by the size of the recommended version jump (paper Figure 5). */
+  jumps: z.array(z.object({ id: key, attempts: count, passed: count })),
+  /**
+   * Share of fixable vulnerabilities fixed by passing upgrades (paper Figure 6),
+   * for the dimensions the paper reports, to whole percent; no fix rate.
+   */
+  breakdowns: z.record(key, z.array(z.object({ label: nonEmpty, n: count, passRate: rate }))),
 });
 
 const comparisonDimensionSchema = z.object({
@@ -201,8 +187,8 @@ const comparisonDimensionSchema = z.object({
   decimals: z.tuple([z.number().int().min(0).max(2), z.number().int().min(0).max(2)]),
 });
 
-/** P25, median, P75, P90. */
-const boxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+/** P10, P25, median, P75, P90. */
+const boxSchema = z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]);
 
 export const benchmarkSchema = z
   .object({
@@ -222,8 +208,7 @@ export const benchmarkSchema = z
     summary: nonEmpty,
     paper: z.object({
       title: nonEmpty,
-      authors: z.array(nonEmpty).min(1),
-      affiliation: nonEmpty,
+      authors: z.array(z.object({ name: nonEmpty, affiliations: z.array(nonEmpty).min(1) })).min(1),
       date: z.iso.date(),
     }),
     links: z.object({
@@ -276,6 +261,7 @@ export const benchmarkSchema = z
       fixPathShare: percent,
       openShare: percent,
       resolvedShare: percent,
+      ignoredShare: percent,
     }),
     metrics: z.array(metricSchema).min(1),
     primaryMetric: key,
@@ -300,7 +286,7 @@ export const benchmarkSchema = z
         }),
       ),
     }),
-    /** Paper section 5.2: the agents matched on the same upgrades. */
+    /** The agents matched on the same upgrades (paper section 5.1). */
     paired: z.object({
       comparisons: z.array(
         z.object({
@@ -309,19 +295,13 @@ export const benchmarkSchema = z
           /** Upgrades only `a` passes, and only `b` passes. */
           aOnly: count,
           bOnly: count,
-          /** Exact McNemar p-value on the discordant upgrades. */
-          p: z.number().positive().max(1),
-          macroDiff: z.number().min(-1).max(1),
-          ci: z.tuple([z.number(), z.number()]),
-          reposAhead: count.nullable(),
-          reposBehind: count.nullable(),
         }),
       ),
       /** Every upgrade, by the set of configurations that passed it. */
       agreement: z.array(z.object({ passedBy: z.array(id), count })),
     }),
     baseline: baselineSchema,
-    /** Paper Table 4: each agent on the upgrades the baseline passes, and on the rest. */
+    /** Paper Table 3: each agent on the upgrades the baseline passes, and on the rest. */
     adviceSplit: z.object({
       solvable: count,
       other: count,
@@ -329,17 +309,11 @@ export const benchmarkSchema = z
         z.object({
           id,
           solvablePassed: count,
-          solvableMacro: macroSchema,
           otherPassed: count,
-          otherMacro: macroSchema,
           /** Upgrades the baseline passes and the agent fails. */
           regressions: count,
           /** Upgrades the agent passes and the baseline fails. */
-          valueAdd: count,
-          valueAddTestEdits: count,
-          valueAddManagedPins: count,
-          /** Exact McNemar p, value-add against regressions. */
-          p: z.number().positive().max(1),
+          gains: count,
         }),
       ),
     }),
@@ -530,13 +504,6 @@ export const benchmarkSchema = z
       if (c.green < c.passed || c.green > c.attempts) {
         issue(at("green"), "Green attempts must lie between passed and attempts");
       }
-      for (const field of ["macro", "macroFixed"] as const) {
-        const [low, high] = c[field].ci;
-        if (!(low <= c[field].rate && c[field].rate <= high)) {
-          issue(at(field), "Macro rate must lie inside its confidence interval");
-        }
-      }
-      if (c.reposAllPass + c.reposNonePass > c.repos) issue(at("reposAllPass"), "Too many repositories");
     });
 
     // Root causes: one per failed attempt, causes adding up to their group.
@@ -558,8 +525,9 @@ export const benchmarkSchema = z
       }
     }
 
-    // Baseline: rates equal their counts, the flow never grows, and every
-    // split partitions its upgrades and PASSes.
+    // Baseline: rates equal their counts, the flow never grows, its jumps
+    // partition the same upgrades as the agents', and its breakdown buckets
+    // are the agents' buckets.
     const b = data.baseline;
     const at = (...rest: (string | number)[]) => ["baseline", ...rest];
     const expectedBaseline: Record<string, number> = {
@@ -581,25 +549,23 @@ export const benchmarkSchema = z
     b.flow.forEach((v, i) => {
       if (i > 0 && v > b.flow[i - 1]!) issue(at("flow", i), "Flow counts must not increase");
     });
-    for (const [field, parts] of [
-      ["jumps", b.jumps],
-      ["transitiveOnly", [b.transitiveOnly, b.otherDependency]],
-      ["managedPins", [b.managedPins, b.otherPins]],
-    ] as const) {
-      const sumAttempts = parts.reduce((t, x) => t + x.attempts, 0);
-      const sumPassed = parts.reduce((t, x) => t + x.passed, 0);
-      if (sumAttempts !== b.attempts || sumPassed !== b.passed) {
-        issue(at(field), `"${field}" covers ${sumPassed} of ${sumAttempts}, expected ${b.passed} of ${b.attempts}`);
-      }
+    if (b.jumps.map((j) => j.id).join() !== jumpIds.join()) issue(at("jumps"), "Jumps must follow jumpCategories");
+    const bumpJumpAttempts = b.jumps.reduce((t, j) => t + j.attempts, 0);
+    const bumpJumpPassed = b.jumps.reduce((t, j) => t + j.passed, 0);
+    if (bumpJumpAttempts !== b.attempts || bumpJumpPassed !== b.passed) {
+      issue(at("jumps"), `Jumps cover ${bumpJumpPassed} of ${bumpJumpAttempts}, expected ${b.passed} of ${b.attempts}`);
     }
-    if (b.remaining.reduce((t, x) => t + x, 0) !== b.vulnsFixable - b.vulnsCleared) {
-      issue(at("remaining"), "Baseline remaining must equal fixable minus cleared");
-    }
-    for (const [low, high, v, field] of [
-      [b.macro.ci[0], b.macro.ci[1], b.macro.rate, "macro"],
-      [b.macroFixed.ci[0], b.macroFixed.ci[1], b.macroFixed.rate, "macroFixed"],
-    ] as const) {
-      if (!(low <= v && v <= high)) issue(at(field), "Macro rate must lie inside its confidence interval");
+    const reference = data.configurations[0];
+    b.jumps.forEach((j, i) => {
+      const agent = reference?.jumps.find((x) => x.id === j.id);
+      if (agent && agent.attempts !== j.attempts) issue(at("jumps", i), `"${j.id}" has ${j.attempts} upgrades, the agents ${agent.attempts}`);
+    });
+    for (const [dim, categories] of Object.entries(b.breakdowns)) {
+      if (!dimensionIds.has(dim)) issue(at("breakdowns", dim), `Unknown dimension "${dim}"`);
+      categories.forEach((cat, i) => {
+        const agent = reference?.breakdowns[dim]?.find((x) => x.label === cat.label);
+        if (!agent || agent.n !== cat.n) issue(at("breakdowns", dim, i), `"${cat.label}" must match an agent bucket of the same size`);
+      });
     }
 
     // Advice split: the baseline's PASSes are the solvable side, and each
@@ -617,10 +583,7 @@ export const benchmarkSchema = z
       if (a.regressions !== split.solvable - a.solvablePassed) {
         issue(["adviceSplit", "agents", i], "Regressions must be the solvable upgrades the agent fails");
       }
-      if (a.valueAdd !== a.otherPassed) issue(["adviceSplit", "agents", i], "Value-add must be the other upgrades the agent passes");
-      if (a.valueAddTestEdits > a.valueAdd || a.valueAddManagedPins > a.valueAdd) {
-        issue(["adviceSplit", "agents", i], "Value-add sub-counts cannot exceed value-add");
-      }
+      if (a.gains !== a.otherPassed) issue(["adviceSplit", "agents", i], "Gains must be the other upgrades the agent passes");
     });
 
     // Paired comparisons: the agreement pattern covers every upgrade once,
@@ -641,9 +604,6 @@ export const benchmarkSchema = z
       const bOnly = passedBy((ids) => ids.includes(cmp.b) && !ids.includes(cmp.a));
       if (aOnly !== cmp.aOnly || bOnly !== cmp.bOnly) {
         issue(["paired", "comparisons", i], `Discordant counts disagree with the agreement pattern (${aOnly}/${bOnly})`);
-      }
-      if (!(cmp.ci[0] <= cmp.macroDiff && cmp.macroDiff <= cmp.ci[1])) {
-        issue(["paired", "comparisons", i], "Macro difference must lie inside its interval");
       }
     });
 

@@ -2,7 +2,7 @@
 import { benchmark } from "../../data";
 import type { Baseline, Configuration } from "../../data/schema";
 import { configColors } from "../../lib/colors";
-import { formatMacro, formatPercent, formatRatio } from "../../lib/format";
+import { formatPercent, formatRatio } from "../../lib/format";
 
 /*
  * Head-to-head (paper Table 2): the four gates, then the outcomes built from
@@ -12,7 +12,7 @@ import { formatMacro, formatPercent, formatRatio } from "../../lib/format";
  */
 const { metrics, configurations, release, baseline } = benchmark;
 const colors = configColors(configurations);
-/** The paper's column order: the non-agent baseline first, then the agents. */
+/** The paper's column order: the non-agentic baseline first, then the agents. */
 const columns: ((Configuration | Baseline) & { isBaseline: boolean; highlight: boolean })[] = [
   { ...baseline, isBaseline: true, highlight: false },
   ...configurations.map((c) => ({ ...c, isBaseline: false })),
@@ -53,7 +53,7 @@ const rows = metrics.map((metric, i) => {
         c.isBaseline ? (
           <li>
             <span class="chart__swatch swatch--baseline" aria-hidden="true" />
-            {c.label} (non-agent baseline)
+            {c.label} (non-agentic baseline)
           </li>
         ) : (
           <li>
@@ -102,9 +102,9 @@ const rows = metrics.map((metric, i) => {
             </ul>
             {metric.kind === "verdict" && (
               <p class="row__note">
-                Per repository (macro) [95% CI]:
+                Per repository (macro):
                 {columns.map((c) => (
-                  <span class="metric">{c.label} {formatMacro(c.macro)}</span>
+                  <span class="metric">{c.label} {formatPercent(c.macro)}</span>
                 ))}
               </p>
             )}
@@ -140,8 +140,8 @@ const rows = metrics.map((metric, i) => {
             ))
           }
           <tr>
-            <th scope="row">All gates pass, macro [95% CI]</th>
-            {columns.map((c) => <td class="num">{formatMacro(c.macro)}</td>)}
+            <th scope="row">All gates pass, per repository (macro)</th>
+            {columns.map((c) => <td class="num">{formatPercent(c.macro)}</td>)}
           </tr>
         </tbody>
       </table>

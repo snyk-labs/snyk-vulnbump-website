@@ -280,7 +280,7 @@
   text-align: right;
 }
 
-/* The non-agent baseline in bar charts: an outline, never a fill. */
+/* The non-agentic baseline in bar charts: an outline, never a fill. */
 .bar--baseline {
   border: 1px dashed var(--series-baseline);
   background: transparent;
@@ -346,7 +346,19 @@
   background: var(--fail);
 }
 
-/* The non-agent baseline: an outline, never a fill. */
+/* The non-agentic baseline in the explorer: a dashed outline on the track. */
+.explorer__bars .passtrack--baseline > span {
+  box-sizing: border-box;
+  border: 1px dashed var(--pass-text);
+  background: var(--panel);
+}
+
+.explorer__legend .explorer__swatch--baseline {
+  border: 1px dashed var(--pass-text);
+  background: transparent;
+}
+
+/* The non-agentic baseline: an outline, never a fill. */
 .gatelane.gatelane--baseline .gatelane__pass {
   border: 1px dashed var(--pass-text);
   background: transparent;

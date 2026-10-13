@@ -1,10 +1,12 @@
 ---
 import { benchmark, configById, highlighted } from "../../data";
 import { configColors } from "../../lib/colors";
-import { formatFraction, formatInteger, formatPValue, formatSignedFraction } from "../../lib/format";
+import { formatInteger, formatPp } from "../../lib/format";
 
 /*
- * Paired comparisons (paper section 5.2). The agreement chart is an UpSet-style
+ * Paired comparisons (paper sections 4.5 and 5.1): discordant upgrades and the
+ * macro PASS-rate difference, which the paper tests with a cluster bootstrap
+ * over repositories. The agreement chart is an UpSet-style
  * list: one row per combination of agents that passed an upgrade, with a dot
  * per agent and a bar for the number of upgrades. Bars are Hot Pink where the
  * highlighted configuration passed.
@@ -39,8 +41,7 @@ const agreement = [...paired.agreement]
           <th scope="col">Comparison</th>
           <th scope="col" class="num">Only first passes</th>
           <th scope="col" class="num">Only second passes</th>
-          <th scope="col" class="num">Exact McNemar p</th>
-          <th scope="col" class="num">Macro difference [95% CI]</th>
+          <th scope="col" class="num">Macro PASS difference</th>
         </tr>
       </thead>
       <tbody>
@@ -49,18 +50,10 @@ const agreement = [...paired.agreement]
             <tr>
               <th scope="row">
                 {configById(cmp.a).label} vs {configById(cmp.b).label}
-                {cmp.reposAhead !== null && cmp.reposBehind !== null && (
-                  <small>
-                    Ahead on {cmp.reposAhead} repositories, behind on {cmp.reposBehind}
-                  </small>
-                )}
               </th>
               <td class="num">{cmp.aOnly}</td>
               <td class="num">{cmp.bOnly}</td>
-              <td class="num">{formatPValue(cmp.p)}</td>
-              <td class="num">
-                {formatSignedFraction(cmp.macroDiff)} [{formatFraction(cmp.ci[0])}, {formatFraction(cmp.ci[1])}]
-              </td>
+              <td class="num">{formatPp(configById(cmp.a).macro, configById(cmp.b).macro)}</td>
             </tr>
           ))
         }
@@ -114,20 +107,12 @@ const agreement = [...paired.agreement]
   <figcaption class="chart__caption">
     <span>Dataset {release.datasetVersion}</span>
     <span>Agents matched on the same {total} upgrades</span>
-    <span>McNemar uses the discordant upgrades and treats them as independent; the bootstrap resamples whole repositories</span>
+    <span>Every macro difference is significant under a cluster bootstrap over repositories (10,000 resamples)</span>
     <span>Pink bars: upgrades {highlighted.label} passed</span>
   </figcaption>
 </figure>
 
 <style>
-  .paired th small {
-    display: block;
-    margin-top: 0.15rem;
-    color: var(--ink-faint);
-    font-size: 0.75rem;
-    font-weight: 400;
-  }
-
   .agreement__title {
     margin-bottom: var(--space-4);
     font-size: var(--step-0);

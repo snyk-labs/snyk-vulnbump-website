@@ -4,8 +4,10 @@ import { configColors } from "../../lib/colors";
 import { formatFraction, formatPercent, formatRatio, formatWholePercent } from "../../lib/format";
 
 /*
- * PASS rate by package manager, averaged per repository (paper Figure 6), one
- * bar per configuration. The table adds the pooled rate and each gate.
+ * PASS rate by package manager, averaged per repository, one bar per agent,
+ * from the harness reports. The paper states only the conclusion: the Evo
+ * Remediation Agent is at or above both Claude Code agents in every package
+ * manager. The table adds the pooled rate and each gate.
  */
 const { ecosystems, configurations, release } = benchmark;
 const colors = configColors(configurations);

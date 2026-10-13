@@ -22,13 +22,6 @@ export function comparisonCsv(data: Benchmark): string {
     "vulns_cleared",
     ...data.metrics.map((m) => m.key),
     "macro_pass_rate",
-    "macro_pass_ci_low",
-    "macro_pass_ci_high",
-    "macro_fix_rate",
-    "macro_fix_ci_low",
-    "macro_fix_ci_high",
-    "repos_all_pass",
-    "repos_none_pass",
     ...flowKeys,
     "latency_p50_s",
     "latency_mean_s",
@@ -45,14 +38,7 @@ export function comparisonCsv(data: Benchmark): string {
     c.vulnsFixable,
     c.vulnsCleared,
     ...data.metrics.map((m) => c.values[m.key] ?? ""),
-    c.macro.rate,
-    c.macro.ci[0],
-    c.macro.ci[1],
-    c.macroFixed.rate,
-    c.macroFixed.ci[0],
-    c.macroFixed.ci[1],
-    c.reposAllPass,
-    c.reposNonePass,
+    c.macro,
     ...c.flow,
     c.latencySeconds.p50,
     c.latencySeconds.mean,
@@ -60,7 +46,7 @@ export function comparisonCsv(data: Benchmark): string {
     c.cost.perAttempt.p50,
     c.cost.method,
   ]);
-  // The non-agent baseline has no model, so no cost or latency.
+  // The non-agentic baseline has no model, so no cost or latency.
   const b = data.baseline;
   const baselineRow = [
     b.id,
@@ -71,14 +57,7 @@ export function comparisonCsv(data: Benchmark): string {
     b.vulnsFixable,
     b.vulnsCleared,
     ...data.metrics.map((m) => b.values[m.key] ?? ""),
-    b.macro.rate,
-    b.macro.ci[0],
-    b.macro.ci[1],
-    b.macroFixed.rate,
-    b.macroFixed.ci[0],
-    b.macroFixed.ci[1],
-    b.reposAllPass,
-    b.reposNonePass,
+    b.macro,
     ...b.flow,
     "",
     "",
@@ -122,13 +101,21 @@ export function ecosystemsCsv(data: Benchmark): string {
   return toCsv([header, ...rows]);
 }
 
-/** One row per configuration × dimension × category (per-vulnerability rates). */
+/**
+ * One row per configuration × dimension × category (per-vulnerability rates),
+ * the baseline first. It has only the dimensions and pass rates the paper
+ * reports, so its fix rate is blank.
+ */
 export function breakdownsCsv(data: Benchmark): string {
   const header = ["configuration_id", "dimension", "category", "n", "fix_rate", "pass_rate"];
+  const b = data.baseline;
+  const baselineRows = Object.entries(b.breakdowns).flatMap(([dimension, categories]) =>
+    categories.map((cat) => [b.id, dimension, cat.label, cat.n, "", cat.passRate]),
+  );
   const rows = data.configurations.flatMap((c) =>
     Object.entries(c.breakdowns).flatMap(([dimension, categories]) =>
       categories.map((cat) => [c.id, dimension, cat.label, cat.n, cat.fixRate, cat.passRate]),
     ),
   );
-  return toCsv([header, ...rows]);
+  return toCsv([header, ...baselineRows, ...rows]);
 }

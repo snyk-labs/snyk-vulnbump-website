@@ -11,7 +11,7 @@ const steps = ["var(--series-muted-strong)", "var(--series-muted)"];
 const opacitySteps = ["var(--pass-op-2)", "var(--pass-op-3)"];
 
 /**
- * The non-agent baseline is drawn as an outline (dashed where the mark allows),
+ * The non-agentic baseline is drawn as an outline (dashed where the mark allows),
  * never filled, so it reads as a reference rather than a competitor.
  */
 export const BASELINE_COLOR = "var(--series-baseline)";

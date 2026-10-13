@@ -5,16 +5,21 @@ import { formatPercent, formatRatio, formatWholePercent } from "../../lib/format
 
 /*
  * Share of upgrades passing every gate by the size of the recommended version
- * jump (paper Figure 5), one bar per configuration. Minor jumps below 1.0 are
- * kept apart because semantic versioning gives no guarantee there.
+ * jump (paper Figure 5), one bar per agent and a dashed outline for the
+ * package manager bump. Minor jumps below 1.0 are kept apart because semantic
+ * versioning gives no guarantee there.
  */
-const { jumpCategories, configurations, release } = benchmark;
+const { jumpCategories, configurations, baseline, release } = benchmark;
 const colors = configColors(configurations);
+const columns = [
+  ...configurations.map((c) => ({ ...c, isBaseline: false })),
+  { ...baseline, highlight: false, isBaseline: true },
+];
 
 const groups = jumpCategories.map((category) => ({
   category,
   attempts: configurations[0]!.jumps.find((j) => j.id === category.id)!.attempts,
-  results: configurations.map((c) => {
+  results: columns.map((c) => {
     const j = c.jumps.find((x) => x.id === category.id)!;
     return { config: c, passed: j.passed, attempts: j.attempts, rate: j.passed / j.attempts };
   }),
@@ -24,12 +29,19 @@ const groups = jumpCategories.map((category) => ({
 <figure class="chart">
   <ul class="chart__legend" aria-label="Configurations">
     {
-      configurations.map((c) => (
-        <li>
-          <span class="chart__swatch" style={`background: ${colors[c.id]}`} aria-hidden="true" />
-          {c.label}
-        </li>
-      ))
+      columns.map((c) =>
+        c.isBaseline ? (
+          <li>
+            <span class="chart__swatch swatch--baseline" aria-hidden="true" />
+            {c.label} (non-agentic baseline)
+          </li>
+        ) : (
+          <li>
+            <span class="chart__swatch" style={`background: ${colors[c.id]}`} aria-hidden="true" />
+            {c.label}
+          </li>
+        ),
+      )
     }
   </ul>
 
@@ -46,7 +58,10 @@ const groups = jumpCategories.map((category) => ({
               {results.map(({ config, passed, attempts: n, rate }) => (
                 <li aria-label={`${config.label}: ${formatWholePercent(rate)}, ${formatRatio(passed, n)}`}>
                   <span class="track">
-                    <span class="bar" style={`--value: ${rate}; background: ${colors[config.id]}`} />
+                    <span
+                      class:list={["bar", { "bar--baseline": config.isBaseline }]}
+                      style={config.isBaseline ? `--value: ${rate}` : `--value: ${rate}; background: ${colors[config.id]}`}
+                    />
                     <span class="value metric">{formatWholePercent(rate)}</span>
                   </span>
                   <span class:list={["n metric", { "is-highlight": config.highlight }]}>
@@ -70,7 +85,7 @@ const groups = jumpCategories.map((category) => ({
           <tr>
             <th scope="col">Recommended jump</th>
             <th scope="col" class="num">Upgrades</th>
-            {configurations.map((c) => <th scope="col" class="num">{c.label}</th>)}
+            {columns.map((c) => <th scope="col" class="num">{c.label}</th>)}
           </tr>
         </thead>
         <tbody>

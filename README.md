@@ -9,10 +9,10 @@ Gatehouse theme (Snyk purple for PASS, orange for FAIL, solid fills only).
 > **Status: draft.** Agent figures come from the three harness reports of the
 > 2026-10-04/05 single-upgrade runs (Evo Remediation Agent, harness `remy`;
 > Claude Code + Snyk scan; Claude Code unaided) in `snyk/remy-benchmark`
-> (`benchmarking/reports/*-easy`). The site follows draft v2 of the VulnBump
-> paper (Pasiunaite et al., 9 October 2026), including its names and its
-> non-agent baseline, the package manager bump. Every agent number in the
-> paper is reproduced here and agrees with the reports. While `release.status` is `"draft"`, the header tag reads
+> (`benchmarking/reports/*-easy`). The site follows the VulnBump paper of
+> 12 October 2026 (Pasiunaite et al.), including its names, its five main
+> findings and its non-agentic baseline, the package manager bump. Every agent
+> number in the paper is reproduced here and agrees with the reports. While `release.status` is `"draft"`, the header tag reads
 > "1.0 draft" and every page is marked `noindex`.
 
 ## Stack
@@ -42,26 +42,33 @@ validated by `src/data/schema.ts`. The `configurations` figures are computed
 from the harness reports with the harness's own report code
 (`functional.pdf_report`, against `cases-43/cases.yaml`), not copied from a
 PDF, so rates keep full precision. Per-attempt recomputation confirms the
-paper's derived figures too (per-gate rates, paired McNemar counts, version
-jumps, macro rates by package manager, first failed gate). A few values exist
-only in the paper and are taken from it as published: the 10,000-resample
-bootstrap intervals, the paired-difference intervals, the Table 4 root causes
-(manually annotated), the production distributions, and the related-work
-comparison (Table 1). The package manager bump ran outside the harness
-reports (8 October), so its figures (`baseline`, `adviceSplit`, and its
-columns in `rootCauses`) come from the paper alone; the schema checks them for
-internal consistency (gate rates against counts, flow against Figure 4, every
-split against its totals, each agent's split against its PASS count).
+paper's derived figures too (per-gate rates, paired discordant counts, version
+jumps, macro rates, first failed gate). A few values exist only in the paper
+and are taken from it as published: the Table 4 root causes (manually
+annotated), the production distributions, and the related-work comparison
+(Table 1). The package manager bump ran outside the harness reports
+(8 October), so its figures (`baseline`, `adviceSplit`, and its columns in
+`rootCauses`) come from the paper alone, its Figure 6 shares to whole percent;
+the schema checks them for internal consistency (gate rates against counts,
+flow against Figure 4, jumps and breakdown buckets against the agents', each
+agent's split against its PASS count).
+
+The paper reports fewer derived statistics than draft v2 did, and the site
+follows it: macro PASS rates without intervals, paired significance by
+cluster bootstrap only (no McNemar tests), and the advice split as PASS
+rates, regressions and gains. The per-package-manager macro rates, cost and
+latency, and the integrity signals come from the harness reports; the paper
+states only the conclusions they support, or does not cover them.
 
 The build fails if the data breaks the schema or its arithmetic: every rate
 must equal its counts, gate counts must never grow, ecosystem rows must sum to
 each configuration's totals, every breakdown must cover all fixable
 vulnerabilities, remaining vulnerabilities must equal fixable minus cleared,
-each macro rate must sit inside its interval, the paired agreement pattern
-must reproduce every PASS count and discordant count, root causes must add up
-to the failures, version jumps must partition the upgrades, and the selection
-funnel must end at the repositories run. `tests/data.test.ts` also pins the
-paper's Tables 2–4 and Figures 1 and 4–6 value by value.
+the paired agreement pattern must reproduce every PASS count and discordant
+count, root causes must add up to the failures, version jumps must partition
+the upgrades (the bump's on the same upgrades as the agents'), and the
+selection funnel must end at the repositories run. `tests/data.test.ts` also
+pins the paper's Tables 2–4 and Figures 1, 2 and 4–6 value by value.
 
 | Field | Drives |
 | --- | --- |
@@ -71,15 +78,15 @@ paper's Tables 2–4 and Figures 1 and 4–6 value by value.
 | `highlights`, `findings`, `methodology` | Home highlights, the results findings list (the paper's main findings), the methodology pipeline cards (Figure 3) |
 | `configurations[].subtitle`, `baseline.subtitle` | One line under each harness in the funnel lanes and leaderboard |
 | `metrics` + `configurations[].gates`, `values` | Head-to-head scorecard (Table 2): four gates, "project still works", PASS, instances fixed |
-| `configurations[].macro`, `macroFixed`, `reposAllPass`, `reposNonePass` | Repository-level results (Table 3) |
+| `configurations[].macro`, `baseline.macro` | Per-repository (macro) PASS rate under the scorecard (section 5.1) |
 | `flowSteps` + `configurations[].flow` | Shipping-gates funnel, and failures by first failed gate (Figure 4) |
-| `paired` | Paired comparisons and who passes each upgrade (section 5.2) |
+| `paired` | Discordant upgrades per agent pair and who passes each upgrade (section 5.1) |
 | `rootCauses` | Root cause of every failed attempt (Table 4) |
-| `jumpCategories` + `configurations[].jumps` | PASS rate by recommended version jump (Figure 5) |
-| `configurations[].ecosystems` | Macro PASS rate by package manager (Figure 6) |
-| `dimensions` + `configurations[].breakdowns` | Per-vulnerability fix and pass rates (Figure 7) |
-| `baseline` | The non-agent package manager bump: drawn dashed or as an outline in the scorecard, gates funnel, repository-level table and failures |
-| `adviceSplit` | Paper Table 4: each agent on the 144 upgrades the bump passes and on the other 163 (regressions, value-add, McNemar) |
+| `jumpCategories` + `configurations[].jumps`, `baseline.jumps` | PASS rate by recommended version jump (Figure 5) |
+| `configurations[].ecosystems` | Macro PASS rate by package manager (harness reports; the paper states only the ranking) |
+| `dimensions` + `configurations[].breakdowns`, `baseline.breakdowns` | Per-vulnerability fix and pass rates; fix difficulty and dependency type are Figure 6 |
+| `baseline` | The non-agentic package manager bump: drawn dashed or as an outline in the scorecard, gates funnel, failures, version jumps and explorer |
+| `adviceSplit` | Paper Table 3: each agent on the 144 upgrades the bump passes and on the other 163 (PASS rates, regressions, gains) |
 | `configurations[].run` | Provenance: report folder, harness id, harness revision, Snyk CLI build, report time |
 | `failureReasons` + `configurations[].failures` | Per-gate failure counts behind the gate rates |
 | `configurations[].cost`, `latencySeconds` | Cost and latency percentiles. `tokens` is kept in the download but not charted: the harness says token counts are not comparable across the Evo Remediation Agent and Claude Code |
@@ -109,7 +116,7 @@ PASS is solid purple and FAIL solid orange, with no gradients.
 - **Agent shades**: the highlighted agent is solid `--pass`; the others are
   `--pass` mixed into the panel at the theme's fixed steps (0.62 for Claude
   Code + Snyk scan, 0.34 for Claude Code unaided), so counts inside the bars
-  stay legible. The non-agent baseline is a dashed outline.
+  stay legible. The non-agentic baseline is a dashed outline.
 - **Type**: Geist 600 headlines (tracking -0.04em), Geist Mono for labels and
   numbers. Purple #8F3CE8 is about 3.9:1 on the paper, so it carries fills,
   never small text.
@@ -124,14 +131,13 @@ brand review signs off on the theme as a whole.
 | --- | --- |
 | `GateFunnel` | Signature chart: lane grid, one lane per harness, purple block per stage with the drop below it in orange; gate headers select a gate and fill the detail row |
 | `Leaderboard` | Agents ranked by a sortable column, filterable by package manager; the baseline is an unranked reference row |
-| `GateScorecard` | Head-to-head bars per Table 2 row, best value tagged (including rows a baseline wins) |
-| `RepoLevelTable` | Table 3: macro rates with intervals, repositories all or none passing, remaining instances |
-| `PairedComparison` | McNemar and bootstrap results, plus an UpSet-style list of which agents passed each upgrade |
-| `AdviceSplit` | Table 4: PASS rates on the Snyk-advice-solvable split and the rest, regressions and value-add |
-| `FailureComparison` | Figure 4 as one fail stack per harness (first failed gate) and Table 5 (root causes) |
-| `UpgradeJump` | Figure 5: PASS rate by recommended version jump |
-| `EcosystemComparison` | Figure 6: macro PASS rate by package manager, grouped bars |
-| `VulnBreakdown` | Explorer (Figure 7): per-vulnerability pass or fix rates in buckets, a purple bar per agent on an orange track |
+| `GateScorecard` | Head-to-head bars per Table 2 row, best value tagged (including rows a baseline wins), macro PASS rates below |
+| `PairedComparison` | Discordant upgrades and macro PASS differences per agent pair, plus an UpSet-style list of which agents passed each upgrade |
+| `AdviceSplit` | Table 3: PASS rates on the Snyk-advice-solvable split and the rest, regressions and gains |
+| `FailureComparison` | Figure 4 as one fail stack per harness (first failed gate) and Table 4 (root causes) |
+| `UpgradeJump` | Figure 5: PASS rate by recommended version jump, the bump dashed |
+| `EcosystemComparison` | Macro PASS rate by package manager, grouped bars |
+| `VulnBreakdown` | Explorer (Figure 6 and more): per-vulnerability pass or fix rates in buckets, a purple bar per agent on an orange track, the bump dashed where the paper reports it |
 | `SelectionFunnel` | Figure 1: candidates by source, then each filter with kept and dropped counts |
 | `ProductionComparison` | Figure 2: production against VulnBump, grouped bars and box plots |
 | `RelatedWorkTable` | Table 1: benchmarks compared on the checks used to score an attempt |

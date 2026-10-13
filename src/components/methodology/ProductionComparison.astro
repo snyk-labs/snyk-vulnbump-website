@@ -13,7 +13,7 @@ const series = [
   { key: "benchmark", label: "VulnBump dataset", color: "var(--series-highlight)" },
 ] as const;
 
-const boxMax = Math.max(...perProject.groups.flatMap((g) => [g.production[3], g.benchmark[3]]));
+const boxMax = Math.max(...perProject.groups.flatMap((g) => [g.production[4], g.benchmark[4]]));
 const axisMax = Math.ceil(boxMax / 25) * 25;
 const ticks = Array.from({ length: axisMax / 25 + 1 }, (_, i) => i * 25).filter((t) => t % 50 === 0);
 const pos = (v: number) => `${(v / axisMax) * 100}%`;
@@ -73,17 +73,18 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
               <span class="cat">{g.label}</span>
               <span class="pair">
                 {series.map((s) => {
-                  const [p25, p50, p75, p90] = g[s.key];
+                  const [p10, p25, p50, p75, p90] = g[s.key];
                   return (
                     <span
                       class="box-track"
-                      aria-label={`${g.label}, ${s.label}: median ${fmt(p50)}, P25 ${fmt(p25)}, P75 ${fmt(p75)}, P90 ${fmt(p90)}`}
+                      aria-label={`${g.label}, ${s.label}: median ${fmt(p50)}, P25 ${fmt(p25)}, P75 ${fmt(p75)}, P10 ${fmt(p10)}, P90 ${fmt(p90)}`}
                     >
+                      <span class="whisker" style={`left: ${pos(p10)}; width: calc(${pos(p25)} - ${pos(p10)})`} />
                       <span class="whisker" style={`left: ${pos(p75)}; width: calc(${pos(p90)} - ${pos(p75)})`} />
                       <span class="box" style={`left: ${pos(p25)}; width: calc(${pos(p75)} - ${pos(p25)}); background: ${s.color}`} />
                       <span class="median" style={`left: ${pos(p50)}`} />
                       <span class="box-value metric" style={`left: calc(${pos(p90)} + 0.4rem)`}>
-                        {fmt(p50)} <span>({fmt(p25)}–{fmt(p75)}, P90 {fmt(p90)})</span>
+                        {fmt(p50)} <span>({fmt(p25)}–{fmt(p75)}, P10–P90 {fmt(p10)}–{fmt(p90)})</span>
                       </span>
                     </span>
                   );
@@ -128,7 +129,7 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
             perProject.groups.map((g) => (
               <tr>
                 <th scope="row">{perProject.label}</th>
-                <td>{g.label} (P25 / median / P75 / P90)</td>
+                <td>{g.label} (P10 / P25 / median / P75 / P90)</td>
                 <td class="num">{g.production.map(fmt).join(" / ")}</td>
                 <td class="num">{g.benchmark.map(fmt).join(" / ")}</td>
               </tr>
