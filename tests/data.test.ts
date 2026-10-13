@@ -11,7 +11,9 @@ import {
   formatUsd,
   formatWholePercent,
 } from "../src/lib/format";
+import { SOCIAL_HEIGHT, SOCIAL_WIDTH, socialAlt, socialCard, socialImagePath } from "../src/lib/social";
 import { authorLine, listWords } from "../src/lib/words";
+import { existsSync, readFileSync } from "node:fs";
 
 const clone = () => structuredClone(raw) as Record<string, any>;
 const messages = (data: unknown) =>
@@ -348,6 +350,31 @@ describe("benchmark dataset", () => {
     const data = clone();
     data.configurations[0].highlight = true;
     expect(messages(data)).toContain("Exactly one configuration must be highlighted");
+  });
+});
+
+describe("social card", () => {
+  const card = socialCard(benchmark);
+
+  it("has a rendered card for the current numbers (run `npm run social` if not)", () => {
+    const file = `public${socialImagePath(card)}`;
+    expect(existsSync(file)).toBe(true);
+    const png = readFileSync(file);
+    expect(png.subarray(1, 4).toString()).toBe("PNG");
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([SOCIAL_WIDTH, SOCIAL_HEIGHT]);
+  });
+
+  it("describes what the card shows", () => {
+    expect(socialAlt(card)).toBe(
+      "Snyk VulnBump Benchmark 1.0: Fixed isn't shipped. Dependency upgrades pass rate: Evo Remediation Agent 90.2%, " +
+        "Claude Code + Snyk scan 77.5%, Claude Code unaided 59.6%, Package manager bump 46.9%.",
+    );
+  });
+
+  it("changes its file name when the numbers change", () => {
+    const changed = structuredClone(benchmark);
+    changed.configurations[2]!.values.allGates = 0.91;
+    expect(socialImagePath(socialCard(changed))).not.toBe(socialImagePath(card));
   });
 });
 

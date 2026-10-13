@@ -1,7 +1,10 @@
 ---
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import SiteFooter from "../components/site/SiteFooter.astro";
 import SiteHeader from "../components/site/SiteHeader.astro";
 import { benchmark, site } from "../data";
+import { SOCIAL_HEIGHT, SOCIAL_WIDTH, socialAlt, socialCard, socialImagePath } from "../lib/social";
 import "../styles/global.css";
 // The 2b theme overrides global.css, so it must load after it.
 import "../styles/theme-2b.css";
@@ -18,6 +21,18 @@ const isDraft = benchmark.release.status === "draft";
 // them as "/" and "/results" (cleanUrls), so canonicalise to that form.
 const cleanPath = Astro.url.pathname.replace(/(\/index)?\.html$/, "") || "/";
 const canonicalUrl = new URL(cleanPath, Astro.site);
+
+// One share card for every page. Its file name
+// fingerprints what it shows, so a stale card fails the production build.
+const card = socialCard(benchmark);
+const socialPath = socialImagePath(card);
+if (!existsSync(join(process.cwd(), "public", socialPath))) {
+  const message = `Social card ${socialPath} is missing or stale: run \`npm run social\``;
+  if (import.meta.env.PROD) throw new Error(message);
+  console.warn(message);
+}
+const socialImage = new URL(socialPath, Astro.site);
+const socialImageAlt = socialAlt(card);
 ---
 
 <!doctype html>
@@ -39,9 +54,16 @@ const canonicalUrl = new URL(cleanPath, Astro.site);
     <meta property="og:title" content={documentTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(SOCIAL_WIDTH)} />
+    <meta property="og:image:height" content={String(SOCIAL_HEIGHT)} />
+    <meta property="og:image:alt" content={socialImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={documentTitle} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <meta name="twitter:image:alt" content={socialImageAlt} />
     <slot name="head" />
   </head>
   <body>

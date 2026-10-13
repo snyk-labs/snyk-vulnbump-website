@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
-    "verify": "npm run check && npm run test && npm run build"
+    "verify": "npm run check && npm run test && npm run build",
+    "social": "node scripts/social-card.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.1",

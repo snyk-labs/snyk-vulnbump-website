@@ -34,6 +34,7 @@ Requires Node 24.
 npm install
 npm run dev        # http://localhost:4321
 npm run verify     # astro check + unit tests + production build
+npm run social     # re-render the social share card (needs a local Chrome, Brave or Edge)
 ```
 
 ## The benchmark data
@@ -150,12 +151,27 @@ exact-value table and provenance caption in the server-rendered HTML. Agents
 are distinguished by labels and fixed purple shades (never by rank), so
 labels and tables must stay visible.
 
+## Social share card
+
+Every page carries Open Graph and Twitter `summary_large_image` tags with its
+own title and description and one shared 1200 × 630 card, as
+[vulnbench.com](https://vulnbench.com/) does. The card is rendered from
+`benchmark.json` by `scripts/social-card.mjs` (headline, question, and PASS
+rate per harness, in the 2b theme, with the white Snyk wordmark from the brand
+kit in `scripts/social/`) into `public/brand/social-<hash>.png`.
+
+The hash fingerprints what the card shows (`src/lib/social.ts`), so social
+crawlers fetch a new image when the numbers change, and the production build
+fails with "Social card … is missing or stale" until you run `npm run social`
+and commit the new PNG. Bump `DESIGN_VERSION` there when the card's design
+changes. Set `CHROME_PATH` if the script cannot find a Chromium-based browser.
+
 ## Deploying to Vercel
 
 1. Import `snyk-labs/snyk-vulnbump-website` in Vercel. The Astro preset and
    `vercel.json` already set install/build commands and `dist` as output.
-2. Set `SITE_URL` (for example `https://vulnbump.com`) so canonical URLs and the
-   sitemap use the production domain. Without it, Vercel's production hostname
+2. Set `SITE_URL` (for example `https://vulnbump.com`) so canonical URLs, the
+   sitemap and the social card's absolute image URL use the production domain. Without it, Vercel's production hostname
    is used.
 3. Before launch, set `release.status` to `"published"` (and `publishedAt`) in
    `src/data/benchmark.json`.
