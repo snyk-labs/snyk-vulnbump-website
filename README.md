@@ -10,8 +10,9 @@ Gatehouse theme (Snyk purple for PASS, orange for FAIL, solid fills only).
 > 2026-10-04/05 single-upgrade runs (Evo Remediation Agent, harness `remy`;
 > Claude Code + Snyk scan; Claude Code unaided) in `snyk/remy-benchmark`
 > (`benchmarking/reports/*-easy`). The site follows the VulnBump paper of
-> 12 October 2026 (Pasiunaite et al.), including its names, its five main
-> findings and its non-agentic baseline, the package manager bump. Every agent
+> 12 October 2026 (Pasiunaite et al.), including its names and its
+> non-agentic baseline, the package manager bump; the six findings on the
+> results page were drawn from it and reviewed. Every agent
 > number in the paper is reproduced here and agrees with the reports. While `release.status` is `"draft"`, the header tag reads
 > "1.0 draft" and every page is marked `noindex`.
 
@@ -83,7 +84,7 @@ pins the paper's Tables 2–4 and Figures 1, 2 and 4–6 value by value.
 | `paired` | Discordant upgrades per agent pair and who passes each upgrade (section 5.1) |
 | `rootCauses` | Root cause of every failed attempt (Table 4) |
 | `jumpCategories` + `configurations[].jumps`, `baseline.jumps` | PASS rate by recommended version jump (Figure 5) |
-| `configurations[].ecosystems` | Macro PASS rate by package manager (harness reports; the paper states only the ranking) |
+| `configurations[].ecosystems` | Macro PASS rate by package manager (harness reports; the paper states only the ranking), and per-package-manager gate rates for the leaderboard filter; `vulnsFixed` counts rescan-gate passes |
 | `dimensions` + `configurations[].breakdowns`, `baseline.breakdowns` | Per-vulnerability fix and pass rates; fix difficulty and dependency type are Figure 6 |
 | `baseline` | The non-agentic package manager bump: drawn dashed or as an outline in the scorecard, gates funnel, failures, version jumps and explorer |
 | `adviceSplit` | Paper Table 3: each agent on the 144 upgrades the bump passes and on the other 163 (PASS rates, regressions, gains) |

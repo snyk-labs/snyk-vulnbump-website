@@ -58,41 +58,47 @@
     },
     {
       "value": "82.2%",
-      "label": "of the 163 upgrades that Snyk's recommended version alone does not solve were passed by the Evo Remediation Agent, against 61.3% and 36.2% for Claude Code. Knowing the target is not enough.",
+      "label": "of the 163 upgrades that Snyk's recommended version alone does not solve were passed by the Evo Remediation Agent, against 61.3% and 36.2% for Claude Code. Same model, same findings: the harness makes the difference.",
       "href": "/results#advice",
       "tone": "strong"
     }
   ],
   "findings": [
     {
-      "title": "Only the vulnerability check separates the agents",
-      "summary": "On dependency resolution, build and tests alone, the three agents perform similarly (92.8–93.8%). With the rescan, the Evo Remediation Agent passes 90.2% of upgrades, Claude Code + Snyk scan 77.5% and Claude Code unaided 59.6%, a ranking that holds per repository.",
-      "caveat": "Each agent ran once per upgrade, so the significance tests capture variation across repositories, not reruns.",
+      "title": "Build and tests alone can't separate the agents; checking the fix does",
+      "summary": "On dependency resolution, build and tests, the three agents perform alike (92.8–93.8%). Once the rescan also checks the fix, Evo Remediation Agent passes 90.2% of upgrades, against 77.5% for Claude Code + Snyk scan and 59.6% for Claude Code unaided. Every pairwise difference between the agents is statistically significant.",
+      "caveat": "Each agent ran once per upgrade, and PASS does not penalise new vulnerabilities an upgrade pulls in, which appear more often for Evo Remediation Agent.",
       "href": "/results#head-to-head"
     },
     {
-      "title": "An SCA scanner is a key tool for agents fixing vulnerabilities",
-      "summary": "Snyk's recommended upgrade applied by the package manager bump passes 46.9% of upgrades and Claude Code without Snyk 59.6%; together, as Claude Code + Snyk scan, they pass 77.5%. Without an SCA scan, Claude Code regresses on 20 of the 144 upgrades the bump solves, 15 of them by choosing a version Snyk still flags: web search alone does not reliably find a safe version.",
-      "caveat": "The rescan uses Snyk's vulnerability database, which Claude Code unaided cannot consult. Databases can disagree on which version fixes a vulnerability, so part of the gap may reflect such disagreement.",
+      "title": "An SCA scan is a key tool for agents fixing vulnerabilities",
+      "summary": "The Snyk Open Source scan and recommended upgrade raise Claude Code's PASS rate from 59.6% to 77.5%. Without them, Claude Code often picks a version Snyk still flags: 64 times, against 13 with the scan.",
+      "caveat": "Snyk is both the task source and the judge, so part of this gap may come from vulnerability databases disagreeing on which version fixes an issue.",
       "href": "/results#advice"
     },
     {
-      "title": "Knowing the target is not enough",
-      "summary": "Given the same Snyk findings and model, the Evo Remediation Agent's purpose-built harness passes 12.7 percentage points more than Claude Code + Snyk scan, mostly on the 163 upgrades the package manager bump fails, where the Evo Remediation Agent passes 82.2%, Claude Code + Snyk scan 61.3% and Claude Code unaided 36.2%.",
-      "caveat": "The Evo Remediation Agent combines Snyk intelligence with a loop that builds, tests and repairs, and the setup cannot isolate which component makes the difference.",
-      "href": "/results#advice"
+      "title": "Same model, same findings: the harness makes the difference",
+      "summary": "On Claude Sonnet 5.5 with the same Snyk findings, Evo Remediation Agent's purpose-built harness passes 12.7 percentage points more than Claude Code + Snyk scan: 39 more upgrades, 23 of them major.",
+      "caveat": "All agents were tested with one model, Claude Sonnet 5.5. The setup compares complete systems and cannot isolate which part of the harness makes the difference.",
+      "href": "/results#paired"
     },
     {
-      "title": "The agents fail in opposite ways",
-      "summary": "Claude Code mostly stops short and fails silently: the vulnerability remains in 107 of Claude Code unaided's 124 failures, 70 of which it claimed it fixed, and in 48 of Claude Code + Snyk scan's 69. The Evo Remediation Agent usually lands the upgrade, so 21 of its 30 failures break the build or tests, where the project's own checks catch them.",
-      "caveat": "Single repositories dominate some failure categories: one accounts for 28 of the 30 Claude Code dependency-gate failures, so pooled failure counts lean on a few projects.",
+      "title": "Claude Code fails silently; Evo Remediation Agent fails visibly",
+      "summary": "Claude Code often avoids the risky major upgrade, even when Snyk names the major target, and settles for a patch or minor version that leaves the vulnerability in place. In 70 of its 124 failures, Claude Code unaided reported vulnerabilities as fixed that the rescan still found. Evo Remediation Agent usually lands the upgrade, so most of its failures (21 of 30) break the build or tests, where the project's own checks catch them.",
+      "caveat": "Claude Code transcripts were not kept, and single repositories dominate some failure categories: one accounts for 28 of the 30 Claude Code dependency-gate failures.",
       "href": "/results#failures"
     },
     {
-      "title": "Major framework migrations remain hard",
-      "summary": "PASS rates fall from 96%, 88% and 70% on non-major upgrades to 81%, 61% and 42% on major ones for the Evo Remediation Agent, Claude Code + Snyk scan and Claude Code unaided. Half of the Evo Remediation Agent's major PASSes edit application source, and 23 upgrades, mostly Spring, Spring Boot and Dropwizard migrations, defeat all three agents.",
-      "caveat": "The jump is that of the recommended upgrade. Smaller jumps are not always safe: 10 of the 189 patch and minor upgrades broke the build or tests for at least one agent.",
+      "title": "Major framework migrations remain hard for every agent",
+      "summary": "PASS rates fall from 96%, 88% and 70% on non-major upgrades to 81%, 61% and 42% on major ones for Evo Remediation Agent, Claude Code + Snyk scan and Claude Code unaided. 23 upgrades, mostly Spring, Spring Boot and Dropwizard migrations, defeat all three.",
+      "caveat": "The 23 unsolved upgrades come from just seven Maven and npm repositories.",
       "href": "/results#jump"
+    },
+    {
+      "title": "Transitive vulnerabilities are harder to fix for every harness",
+      "summary": "70% of fixable vulnerabilities are transitive, arriving through packages the project does not declare directly, and for every harness, passing upgrades fix a smaller share of them than of direct ones. Snyk's guidance more than doubles the share of transitive vulnerabilities Claude Code fixes in passing upgrades, from 28% to 59%. Evo Remediation Agent fixes 73%.",
+      "caveat": "A vulnerability reachable through several upgrade paths counts as fixed only when every one of those upgrades removes its path.",
+      "href": "/results#breakdown"
     }
   ],
   "methodology": [
@@ -207,7 +213,7 @@
       "dropLabel": "Dependencies did not resolve"
     },
     {
-      "label": "Vulnerabilities fixed",
+      "label": "Targeted vulns fixed",
       "dropLabel": "Vulnerability not fixed"
     },
     {
@@ -411,6 +417,7 @@
           "repos": 18,
           "attempts": 106,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 56,
           "vulnsCleared": 733,
           "vulnsFixable": 1124,
           "buildPassRate": 1.0,
@@ -423,6 +430,7 @@
           "repos": 3,
           "attempts": 66,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 38,
           "vulnsCleared": 160,
           "vulnsFixable": 204,
           "buildPassRate": 1.0,
@@ -435,6 +443,7 @@
           "repos": 11,
           "attempts": 57,
           "depsResolveRate": 0.772,
+          "vulnsFixed": 50,
           "vulnsCleared": 265,
           "vulnsFixable": 318,
           "buildPassRate": 0.93,
@@ -447,6 +456,7 @@
           "repos": 3,
           "attempts": 18,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 16,
           "vulnsCleared": 124,
           "vulnsFixable": 127,
           "buildPassRate": 1.0,
@@ -459,6 +469,7 @@
           "repos": 3,
           "attempts": 18,
           "depsResolveRate": 0.944,
+          "vulnsFixed": 17,
           "vulnsCleared": 130,
           "vulnsFixable": 131,
           "buildPassRate": 0.944,
@@ -471,6 +482,7 @@
           "repos": 5,
           "attempts": 42,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 18,
           "vulnsCleared": 91,
           "vulnsFixable": 162,
           "buildPassRate": 1.0,
@@ -725,6 +737,7 @@
           "repos": 18,
           "attempts": 106,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 79,
           "vulnsCleared": 874,
           "vulnsFixable": 1124,
           "buildPassRate": 1.0,
@@ -737,6 +750,7 @@
           "repos": 3,
           "attempts": 66,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 59,
           "vulnsCleared": 179,
           "vulnsFixable": 204,
           "buildPassRate": 1.0,
@@ -749,6 +763,7 @@
           "repos": 11,
           "attempts": 57,
           "depsResolveRate": 0.719,
+          "vulnsFixed": 53,
           "vulnsCleared": 266,
           "vulnsFixable": 318,
           "buildPassRate": 0.895,
@@ -761,6 +776,7 @@
           "repos": 3,
           "attempts": 18,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 18,
           "vulnsCleared": 127,
           "vulnsFixable": 127,
           "buildPassRate": 1.0,
@@ -773,6 +789,7 @@
           "repos": 3,
           "attempts": 18,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 18,
           "vulnsCleared": 131,
           "vulnsFixable": 131,
           "buildPassRate": 1.0,
@@ -785,6 +802,7 @@
           "repos": 5,
           "attempts": 42,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 30,
           "vulnsCleared": 139,
           "vulnsFixable": 162,
           "buildPassRate": 1.0,
@@ -1054,6 +1072,7 @@
           "repos": 18,
           "attempts": 106,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 101,
           "vulnsCleared": 1058,
           "vulnsFixable": 1124,
           "buildPassRate": 0.991,
@@ -1066,6 +1085,7 @@
           "repos": 3,
           "attempts": 66,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 66,
           "vulnsCleared": 204,
           "vulnsFixable": 204,
           "buildPassRate": 1.0,
@@ -1078,6 +1098,7 @@
           "repos": 11,
           "attempts": 57,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 55,
           "vulnsCleared": 305,
           "vulnsFixable": 318,
           "buildPassRate": 0.842,
@@ -1090,6 +1111,7 @@
           "repos": 3,
           "attempts": 18,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 18,
           "vulnsCleared": 127,
           "vulnsFixable": 127,
           "buildPassRate": 1.0,
@@ -1102,6 +1124,7 @@
           "repos": 3,
           "attempts": 18,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 17,
           "vulnsCleared": 128,
           "vulnsFixable": 131,
           "buildPassRate": 1.0,
@@ -1114,6 +1137,7 @@
           "repos": 5,
           "attempts": 42,
           "depsResolveRate": 1.0,
+          "vulnsFixed": 41,
           "vulnsCleared": 160,
           "vulnsFixable": 162,
           "buildPassRate": 1.0,

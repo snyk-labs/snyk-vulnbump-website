@@ -49,6 +49,9 @@ const ecosystemResultSchema = z.object({
   repos: count,
   attempts: count,
   depsResolveRate: rate,
+  /** Attempts passing the rescan gate: every targeted vulnerability fixed. */
+  vulnsFixed: count,
+  /** Fixable vulnerability instances, cleared and in total. */
   vulnsCleared: count,
   vulnsFixable: count,
   buildPassRate: rate,
@@ -465,6 +468,7 @@ export const benchmarkSchema = z
         ["attempts", c.attempts],
         ["repos", c.repos],
         ["passed", c.passed],
+        ["vulnsFixed", c.gates.vulnsFixed],
         ["vulnsCleared", c.vulnsCleared],
         ["vulnsFixable", c.vulnsFixable],
       ] as const) {

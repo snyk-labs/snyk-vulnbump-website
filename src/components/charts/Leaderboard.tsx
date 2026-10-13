@@ -8,8 +8,8 @@ export interface BoardEcosystem {
   id: string;
   attempts: number;
   passed: number;
-  vulnsCleared: number;
-  vulnsFixable: number;
+  /** Attempts passing the rescan gate. */
+  vulnsFixed: number;
   depsResolveRate: number;
   buildPassRate: number;
   testsPassRate: number;
@@ -36,7 +36,7 @@ export interface BoardBaseline {
 
 export const BOARD_COLUMNS: { key: BoardKey; label: string }[] = [
   { key: "pass", label: "PASS" },
-  { key: "fixed", label: "Vulns fixed" },
+  { key: "fixed", label: "Targeted vulns fixed" },
   { key: "deps", label: "Deps" },
   { key: "build", label: "Build" },
   { key: "tests", label: "Tests" },
@@ -50,7 +50,7 @@ export function agentRates(agent: BoardAgent, ecosystem: string): { rates: Rates
   return {
     rates: {
       pass: e.passed / e.attempts,
-      fixed: e.vulnsCleared / e.vulnsFixable,
+      fixed: e.vulnsFixed / e.attempts,
       deps: e.depsResolveRate,
       build: e.buildPassRate,
       tests: e.testsPassRate,
@@ -205,6 +205,8 @@ export function Leaderboard({ agents, baseline, ecosystems, eyebrow, title, titl
       </div>
 
       <p className="board__note">
+        Targeted vulns fixed: share of upgrades whose rescan shows every targeted vulnerability fixed (the rescan
+        gate), not the share of vulnerability instances.{" "}
         {ecosystem === "all"
           ? `${attempts} upgrades per agent. Click a column to sort.${baseline ? ` The ${baseline.label.toLowerCase()} is a reference, not ranked.` : ""}`
           : `${attempts} ${ecoLabel} upgrades per agent. Click a column to sort.${baseline ? ` The ${baseline.label.toLowerCase()} has no per-package-manager breakdown.` : ""}`}

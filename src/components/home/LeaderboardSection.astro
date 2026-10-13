@@ -8,7 +8,7 @@ import { Leaderboard } from "../charts/Leaderboard";
 const { configurations, ecosystems } = benchmark;
 const rates = (v: Record<string, number>) => ({
   pass: v.allGates ?? 0,
-  fixed: v.instancesFixed ?? 0,
+  fixed: v.vulnsFixed ?? 0,
   deps: v.depsResolve ?? 0,
   build: v.cleanBuild ?? 0,
   tests: v.testsPass ?? 0,

@@ -158,14 +158,36 @@ describe("benchmark dataset", () => {
     ]);
   });
 
-  it("states the paper's five main findings", () => {
+  it("states the six reviewed findings, each linking to a results section", () => {
     expect(benchmark.findings.map((f) => f.title)).toEqual([
-      "Only the vulnerability check separates the agents",
-      "An SCA scanner is a key tool for agents fixing vulnerabilities",
-      "Knowing the target is not enough",
-      "The agents fail in opposite ways",
-      "Major framework migrations remain hard",
+      "Build and tests alone can't separate the agents; checking the fix does",
+      "An SCA scan is a key tool for agents fixing vulnerabilities",
+      "Same model, same findings: the harness makes the difference",
+      "Claude Code fails silently; Evo Remediation Agent fails visibly",
+      "Major framework migrations remain hard for every agent",
+      "Transitive vulnerabilities are harder to fix for every harness",
     ]);
+    expect(benchmark.findings.map((f) => f.href)).toEqual([
+      "/results#head-to-head",
+      "/results#advice",
+      "/results#paired",
+      "/results#failures",
+      "/results#jump",
+      "/results#breakdown",
+    ]);
+  });
+
+  // The leaderboard's "Targeted vulns fixed" column is the rescan gate, per package manager too.
+  it("counts rescan-gate passes per package manager from the harness reports", () => {
+    const shares = Object.fromEntries(
+      benchmark.configurations.map((c) => [c.id, c.ecosystems.map((e) => formatPercent(e.vulnsFixed / e.attempts))]),
+    );
+    // Maven, Gradle, npm, Yarn, pip, Poetry.
+    expect(shares).toEqual({
+      "claude-code": ["52.8%", "57.6%", "87.7%", "88.9%", "94.4%", "42.9%"],
+      "claude-code-snyk": ["74.5%", "89.4%", "93.0%", "100.0%", "100.0%", "71.4%"],
+      "evo-remediation-agent": ["95.3%", "100.0%", "96.5%", "100.0%", "94.4%", "97.6%"],
+    });
   });
 
   it("credits the paper's authors and affiliations", () => {
@@ -253,6 +275,12 @@ describe("benchmark dataset", () => {
     const data = clone();
     data.configurations[2].ecosystems[0].passed += 1;
     expect(messages(data).some((m) => /passed sum/.test(m))).toBe(true);
+  });
+
+  it("rejects per-package-manager rescan counts that miss the gate total", () => {
+    const data = clone();
+    data.configurations[0].ecosystems[2].vulnsFixed -= 1;
+    expect(messages(data)).toContain("Ecosystem vulnsFixed sum to 194, expected 195");
   });
 
   it("rejects a breakdown that does not cover every vulnerability", () => {
