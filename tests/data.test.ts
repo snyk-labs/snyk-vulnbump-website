@@ -8,7 +8,6 @@ import {
   formatPercent,
   formatPp,
   formatRatio,
-  formatUsd,
   formatWholePercent,
 } from "../src/lib/format";
 import { SOCIAL_HEIGHT, SOCIAL_WIDTH, socialAlt, socialCard, socialImagePath } from "../src/lib/social";
@@ -379,11 +378,9 @@ describe("social card", () => {
 });
 
 describe("formatting", () => {
-  it("formats rates, money and differences", () => {
+  it("formats rates and differences", () => {
     expect(formatPercent(0.9007)).toBe("90.1%");
     expect(formatWholePercent(0.7)).toBe("70%");
-    expect(formatUsd(2.07)).toBe("$2.07");
-    expect(formatUsd(0.0848)).toBe("$0.085");
     expect(formatCompact(976194)).toBe("976.2K");
     expect(formatPp(0.9007, 0.596)).toBe("+30.5 pp");
   });

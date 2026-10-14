@@ -34,16 +34,6 @@ export function formatRatio(numerator: number, denominator: number): string {
   return `${formatInteger(numerator)} of ${formatInteger(denominator)}`;
 }
 
-/** Dollars with cents; sub-dime values keep a third digit ("$0.085"). */
-export function formatUsd(value: number): string {
-  const digits = value > 0 && value < 0.1 ? 3 : 2;
-  return `$${value.toFixed(digits)}`;
-}
-
-export function formatSeconds(value: number): string {
-  return `${formatInteger(Math.round(value))} s`;
-}
-
 /** Percentage-point difference between two fractions: "+12.6 pp". */
 export function formatPp(a: number, b: number): string {
   const pp = (a - b) * 100;

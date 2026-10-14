@@ -22,13 +22,6 @@ const optionalUrl = z.url().nullable();
 /** Counts keyed by configuration id. */
 const perConfig = z.record(id, count);
 
-const percentilesSchema = z.object({
-  mean: z.number().nonnegative(),
-  p50: z.number().nonnegative(),
-  p90: z.number().nonnegative(),
-  p95: z.number().nonnegative(),
-});
-
 /** Critical / high / medium / low. */
 const severityCountsSchema = z.tuple([count, count, count, count]);
 
@@ -118,18 +111,6 @@ export const configurationSchema = z.object({
         count,
       }),
     ),
-  }),
-  cost: z.object({
-    method: z.enum(["list-price-estimate", "tool-reported"]),
-    perAttempt: percentilesSchema,
-    total: z.number().nonnegative(),
-  }),
-  latencySeconds: percentilesSchema,
-  tokens: z.object({
-    input: count,
-    output: count,
-    meanInput: count,
-    meanOutput: count,
   }),
   quality: z.object({
     newVulns: severityCountsSchema,
@@ -249,11 +230,6 @@ export const benchmarkSchema = z
     ),
     model: z.object({ name: nonEmpty, id: nonEmpty, provider: nonEmpty, claudeCodeVersion: nonEmpty }),
     budgets: z.object({ turnsPerUpgrade: count, timeoutMinutesPerAttempt: count, turns: nonEmpty }),
-    /** List prices used for estimated (not tool-reported) costs. */
-    pricing: z.object({
-      inputPerMillion: z.number().positive(),
-      outputPerMillion: z.number().positive(),
-    }),
     /** Snyk Open Source production context (paper section 3.1). */
     production: z.object({
       period: nonEmpty,

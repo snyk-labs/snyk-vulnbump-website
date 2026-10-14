@@ -9,7 +9,7 @@ function toCsv(rows: (string | number)[][]): string {
   return `${rows.map((row) => row.map(cell).join(",")).join("\n")}\n`;
 }
 
-/** One row per configuration: counts, gate rates, gate flow, cost and latency. */
+/** One row per configuration: counts, gate rates, and gate flow. */
 export function comparisonCsv(data: Benchmark): string {
   const flowKeys = data.flowSteps.map((s) => `flow_${s.label.toLowerCase().replaceAll(" ", "_")}`);
   const header = [
@@ -23,11 +23,6 @@ export function comparisonCsv(data: Benchmark): string {
     ...data.metrics.map((m) => m.key),
     "macro_pass_rate",
     ...flowKeys,
-    "latency_p50_s",
-    "latency_mean_s",
-    "cost_mean_usd",
-    "cost_p50_usd",
-    "cost_method",
   ];
   const rows = data.configurations.map((c) => [
     c.id,
@@ -40,13 +35,7 @@ export function comparisonCsv(data: Benchmark): string {
     ...data.metrics.map((m) => c.values[m.key] ?? ""),
     c.macro,
     ...c.flow,
-    c.latencySeconds.p50,
-    c.latencySeconds.mean,
-    c.cost.perAttempt.mean,
-    c.cost.perAttempt.p50,
-    c.cost.method,
   ]);
-  // The non-agentic baseline has no model, so no cost or latency.
   const b = data.baseline;
   const baselineRow = [
     b.id,
@@ -59,11 +48,6 @@ export function comparisonCsv(data: Benchmark): string {
     ...data.metrics.map((m) => b.values[m.key] ?? ""),
     b.macro,
     ...b.flow,
-    "",
-    "",
-    "",
-    "",
-    "not applicable",
   ];
   return toCsv([header, baselineRow, ...rows]);
 }

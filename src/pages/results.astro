@@ -2,7 +2,6 @@
 import { GateFunnel } from "../components/charts/GateFunnel";
 import { VulnBreakdown } from "../components/charts/VulnBreakdown";
 import AdviceSplit from "../components/results/AdviceSplit.astro";
-import CostLatency from "../components/results/CostLatency.astro";
 import EcosystemComparison from "../components/results/EcosystemComparison.astro";
 import FailureComparison from "../components/results/FailureComparison.astro";
 import FindingsList from "../components/results/FindingsList.astro";
@@ -49,7 +48,6 @@ const sections = [
   { id: "jump", label: "Version jump" },
   { id: "ecosystems", label: "By package manager" },
   { id: "integrity", label: "Integrity" },
-  { id: "cost", label: "Cost and latency" },
 ];
 const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
 ---
@@ -240,15 +238,6 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     description="Signals recorded alongside the gates, for the three agents. Upgrades can pull in packages with their own known vulnerabilities, which PASS does not penalise: post-fix scans show new instances in 62 Evo Remediation Agent attempts (across 16 repositories), 30 Claude Code + Snyk scan and 33 Claude Code unaided attempts. Rows marked in amber deserve a closer look."
   >
     <IntegrityTable />
-  </ResultSection>
-  <ResultSection
-    id="cost"
-    index={n("cost")}
-    eyebrow="Cost and latency"
-    title="The Evo Remediation Agent spends more per attempt"
-    description="The Evo Remediation Agent takes longer and costs more per attempt. Costs were measured differently: its costs are estimated from token counts at list price, and Claude Code's are what the tool reports. Read them as an order of magnitude, not a ratio."
-  >
-    <CostLatency />
   </ResultSection>
 </BaseLayout>
 

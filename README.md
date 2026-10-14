@@ -59,7 +59,6 @@ pins the paper's Tables 2–4 and Figures 1, 2 and 4–6 value by value.
 | `adviceSplit` | Paper Table 3: each agent on the 144 upgrades the bump passes and on the other 163 (PASS rates, regressions, gains) |
 | `configurations[].run` | Provenance: report folder, harness id, harness revision, Snyk CLI build, report time |
 | `failureReasons` + `configurations[].failures` | Per-gate failure counts behind the gate rates |
-| `configurations[].cost`, `latencySeconds` | Cost and latency percentiles. `tokens` is kept in the download but not charted: the harness says token counts are not comparable across the Evo Remediation Agent and Claude Code |
 | `qualitySignals` + `configurations[].quality` | Integrity table |
 | `production`, `selection`, `representativeness`, `relatedWork` | Methodology: production context, dataset selection (Figure 1), production comparison (Figure 2), related benchmarks (Table 1) |
 
@@ -84,7 +83,6 @@ To add a new run, add or replace a configuration object; exactly one must be
 | `SelectionFunnel` | Figure 1: candidates by source, then each filter with kept and dropped counts |
 | `ProductionComparison` | Figure 2: production against VulnBump, grouped bars and box plots |
 | `RelatedWorkTable` | Table 1: benchmarks compared on the checks used to score an attempt |
-| `CostLatency` | Percentile strips (median, mean, p90, p95) for latency and cost |
 | `IntegrityTable` | Quality signals side by side |
 
 Each chart labels its marks directly, supports keyboard focus, and ships an

@@ -14,7 +14,6 @@ const {
   metrics,
   model,
   budgets,
-  pricing,
   production,
   selection,
   representativeness,
@@ -451,15 +450,6 @@ Issues to fix by upgrading:
         {" "}{formatInteger(bump.attempts)} upgrades pair one-to-one with the
         agents': 305 have the same recommended upgrade, and two the same package
         with a newer target version.
-      </p>
-      <p>
-        The site also reports cost and latency for the agents, which the paper
-        does not. The Evo Remediation Agent's cost is estimated from its token
-        counts at ${pricing.inputPerMillion} per
-        million input and ${pricing.outputPerMillion} per million output tokens;
-        Claude Code's is what the tool reports. The two methods are not directly
-        comparable, and token counts are not comparable either. Latency is the
-        agent's run alone.
       </p>
 
       <h2>Threats to validity</h2>

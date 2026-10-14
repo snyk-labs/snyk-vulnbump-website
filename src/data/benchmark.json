@@ -146,10 +146,6 @@
     "timeoutMinutesPerAttempt": 360,
     "turns": "All three agents use the same model and 110 agent turns per upgrade."
   },
-  "pricing": {
-    "inputPerMillion": 2,
-    "outputPerMillion": 10
-  },
   "metrics": [
     {
       "key": "depsResolve",
@@ -591,28 +587,6 @@
           }
         ]
       },
-      "cost": {
-        "method": "tool-reported",
-        "perAttempt": {
-          "mean": 0.1014,
-          "p50": 0.08,
-          "p90": 0.18,
-          "p95": 0.21
-        },
-        "total": 31.13
-      },
-      "latencySeconds": {
-        "mean": 127.9,
-        "p50": 65.0,
-        "p90": 332.6,
-        "p95": 541.7
-      },
-      "tokens": {
-        "input": 45201807,
-        "output": 596239,
-        "meanInput": 147237,
-        "meanOutput": 1942
-      },
       "quality": {
         "newVulns": [
           0,
@@ -905,28 +879,6 @@
             "count": 1
           }
         ]
-      },
-      "cost": {
-        "method": "tool-reported",
-        "perAttempt": {
-          "mean": 0.1201,
-          "p50": 0.1,
-          "p90": 0.19,
-          "p95": 0.25
-        },
-        "total": 36.86
-      },
-      "latencySeconds": {
-        "mean": 180.1,
-        "p50": 124.0,
-        "p90": 407.8,
-        "p95": 568.0
-      },
-      "tokens": {
-        "input": 60385752,
-        "output": 667605,
-        "meanInput": 196696,
-        "meanOutput": 2175
       },
       "quality": {
         "newVulns": [
@@ -1225,28 +1177,6 @@
             "count": 1
           }
         ]
-      },
-      "cost": {
-        "method": "list-price-estimate",
-        "perAttempt": {
-          "mean": 2.0937,
-          "p50": 0.74,
-          "p90": 5.02,
-          "p95": 8.69
-        },
-        "total": 642.76
-      },
-      "latencySeconds": {
-        "mean": 456.3,
-        "p50": 190.0,
-        "p90": 803.4,
-        "p95": 3123.1
-      },
-      "tokens": {
-        "input": 303637453,
-        "output": 3548517,
-        "meanInput": 989047,
-        "meanOutput": 11559
       },
       "quality": {
         "newVulns": [
