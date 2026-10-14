@@ -58,7 +58,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
 >
   <PageHero
     eyebrow="Results"
-    title={`${countWord(findings.length)} findings from ${formatInteger(agentAttempts)} attempts.`}
+    title={`${countWord(findings.length)} takeaways from ${formatInteger(agentAttempts)} attempts.`}
     description={`One run per agent on ${upgrades} upgrades. All ${countWord(configurations.length).toLowerCase()} use ${model.name}. Every claim ships with the caveat that qualifies it.`}
   />
 
@@ -155,7 +155,7 @@ const n = (id: string) => indexLabel(sections.findIndex((s) => s.id === id));
     index={n("head-to-head")}
     eyebrow="Head to head"
     title="Four gates, one verdict"
-    description="The Evo Remediation Agent passes every gate on 90.2% of upgrades, 12.7 percentage points more than Claude Code + Snyk scan and 30.6 more than Claude Code unaided, and fixes 95.9% of vulnerability instances; the Snyk scan and recommended upgrade raise Claude Code's PASS rate by 17.9 points. The individual gates show a trade-off: the Evo Remediation Agent never leaves dependencies unresolved and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code + Snyk scan's by 1.3 and 3.6 points. On dependency resolution, build and tests combined, the agents perform similarly; Claude Code's high build and test rates partly reflect avoidance, since an untouched dependency rarely breaks anything. The package manager bump trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks. Per-repository (macro) PASS rates give the same ranking."
+    description="The Evo Remediation Agent passes every gate on 90.2% of upgrades, 12.7 percentage points more than Claude Code + Snyk scan and 30.6 more than Claude Code unaided, and fixes 95.9% of vulnerability instances; the Snyk scan and recommended upgrade raise Claude Code's PASS rate by 17.9 points. The individual gates show a trade-off: the Evo Remediation Agent never leaves dependencies unresolved and fixes every targeted vulnerability in 97.1% of upgrades, but its build and test rates trail Claude Code + Snyk scan's by 1.3 and 3.6 points. On dependency resolution, build, and tests combined, the agents perform similarly; Claude Code's high build and test rates partly reflect avoidance, since an untouched dependency rarely breaks anything. The package manager bump trails every agent on every gate: it fixes the targeted vulnerabilities about as often as Claude Code unaided, but keeps the project working in only 64.2% of upgrades, because it never repairs what the upgrade breaks. Per-repository (macro) PASS rates give the same ranking."
   >
     <GateScorecard />
   </ResultSection>

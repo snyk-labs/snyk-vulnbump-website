@@ -51,7 +51,7 @@
     },
     {
       "value": "+17.9 pts",
-      "label": "from Snyk's scan and recommended upgrade. Applied alone, Snyk's version passes 46.9% of upgrades and Claude Code alone 59.6%; together, as Claude Code + Snyk scan, they pass 77.5%.",
+      "label": "more upgrades passed when Claude Code gets Snyk's scan and recommended upgrade: 77.5%, up from 59.6% on its own. Following Snyk's recommended version without an agent passes 46.9%.",
       "href": "/results#advice",
       "tone": "contrast"
     },
@@ -65,8 +65,8 @@
   "findings": [
     {
       "title": "Build and tests alone can't separate the agents; checking the fix does",
-      "summary": "On dependency resolution, build and tests, the three agents perform alike (92.8–93.8%). Once the rescan also checks the fix, Evo Remediation Agent passes 90.2% of upgrades, against 77.5% for Claude Code + Snyk scan and 59.6% for Claude Code unaided. Every pairwise difference between the agents is statistically significant.",
-      "caveat": "Each agent ran once per upgrade, and PASS does not penalise new vulnerabilities an upgrade pulls in, which appear more often for Evo Remediation Agent.",
+      "summary": "On dependency resolution, build, and tests, the three agents perform alike (92.8–93.8%). Once the rescan also checks the fix, Evo Remediation Agent passes 90.2% of upgrades, against 77.5% for Claude Code + Snyk scan and 59.6% for Claude Code unaided. Every pairwise difference between the agents is statistically significant.",
+      "caveat": "Each agent ran once per upgrade and PASS does not penalise new vulnerabilities an upgrade pulls in.",
       "href": "/results#head-to-head"
     },
     {

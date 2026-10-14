@@ -69,7 +69,7 @@ const rows = metrics
             rows.map(({ metric, cells }) => (
               <tr class:list={{ "is-verdict": metric.kind === "verdict", "is-last": metric === rows[rows.length - 1]!.metric }}>
                 <th scope="row">
-                  {metric.label} <span class="up" aria-label="higher is better">↑</span>
+                  {metric.label}
                 </th>
                 {cells.map((cell) => (
                   <td class:list={["num", { "is-featured": cell.isFeatured, "is-baseline": cell.isBaseline }]}>
@@ -88,7 +88,8 @@ const rows = metrics
     <figcaption>
       <strong>Table 2:</strong> Key results on VulnBump, with Claude Sonnet 5.5 for all agents; the
       package manager bump is the non-agentic baseline. Gate and PASS rates are out of {attemptsLabel}{" "}
-      upgrades. Targeted vulnerabilities fixed is the rescan gate. Vulnerability instances are out of
+      upgrades. Targeted vulnerabilities fixed is the rescan gate: after the upgrade, Snyk scans the project again and the
+      targeted vulnerabilities must no longer appear. Vulnerability instances are out of
       {" "}{fixableLabel}. The filled cell marks the best agent in each row. Dataset {release.datasetVersion}.
     </figcaption>
   </figure>
@@ -213,10 +214,6 @@ const rows = metrics
 
   .cell.is-best small {
     color: rgba(255, 255, 255, 0.85);
-  }
-
-  .up {
-    color: var(--ink-faint);
   }
 
   /* A heavier rule sets PASS off from the gates above it. */
