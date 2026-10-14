@@ -1,6 +1,5 @@
 ---
 import { benchmark } from "../../data";
-import { indexLabel } from "../../lib/words";
 
 /* Findings, each with the caveat that qualifies it (2b design). */
 const { findings } = benchmark;
@@ -10,7 +9,7 @@ const { findings } = benchmark;
   {
     findings.map(({ title, summary, caveat, href }, i) => (
       <li class="finding">
-        <span class="finding__n metric accent-pass">{indexLabel(i)}</span>
+        <span class="finding__n metric accent-pass">#{i + 1}</span>
         <div>
           <h2 class="finding__title">{title}</h2>
           <p class="finding__summary">{summary}</p>
