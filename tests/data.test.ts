@@ -365,8 +365,8 @@ describe("social card", () => {
 
   it("describes what the card shows", () => {
     expect(socialAlt(card)).toBe(
-      "Snyk VulnBump Benchmark 1.0: Fixed isn't shipped. Dependency upgrades pass rate: Evo Remediation Agent 90.2%, " +
-        "Claude Code + Snyk scan 77.5%, Claude Code unaided 59.6%, Package manager bump 46.9%.",
+      "Snyk VulnBump Benchmark 1.0 key results: Four gates, one verdict. All gates pass (PASS): Package manager bump 46.9%, " +
+        "Claude Code unaided 59.6%, Claude Code + Snyk scan 77.5%, Evo Remediation Agent 90.2%.",
     );
   });
 

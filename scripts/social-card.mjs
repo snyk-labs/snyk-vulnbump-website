@@ -27,7 +27,6 @@ const OUT = at(`public${imagePath}`);
 
 const dataUrl = (path, type) => `data:${type};base64,${readFileSync(at(path)).toString("base64")}`;
 const escape = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const pct = (x) => `${(x * 100).toFixed(1)}%`;
 const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
 
 const html = `<!doctype html>
@@ -35,64 +34,68 @@ const html = `<!doctype html>
 <style>
   @font-face { font-family: "Geist"; src: url(${dataUrl("node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2", "font/woff2")}) format("woff2"); font-weight: 100 900; }
   @font-face { font-family: "Geist Mono"; src: url(${dataUrl("node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2", "font/woff2")}) format("woff2"); font-weight: 100 900; }
-  :root { --paper: #0b0613; --panel: #14091f; --ink: #ffffff; --ink-soft: #c9bfd8; --ink-faint: #a294b8;
-    --rule: rgba(255, 255, 255, 0.1); --rule-strong: rgba(255, 255, 255, 0.2); --pass: #8f3ce8; --pass-text: #c481f3; --fail: #ff8904; }
+  :root { --paper: #0b0613; --ink: #ffffff; --ink-soft: #c9bfd8; --ink-faint: #a294b8;
+    --rule: rgba(255, 255, 255, 0.1); --rule-strong: rgba(255, 255, 255, 0.2); --pass: #8f3ce8; --pass-text: #c481f3; --pass-tint: rgba(143, 60, 232, 0.12); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: ${WIDTH}px; height: ${HEIGHT}px; overflow: hidden; background: var(--paper); }
-  body { display: grid; grid-template-rows: 1fr 104px; color: var(--ink); font-family: "Geist", sans-serif; }
-  .main { display: grid; grid-template-columns: 1fr 470px; gap: 56px; padding: 60px 64px 44px; align-items: center; }
-  .eyebrow { display: flex; gap: 14px; align-items: center; color: var(--pass-text); font: 500 18px/1 "Geist Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; }
-  .eyebrow img { width: 30px; height: 30px; }
-  h1 { margin-top: 30px; font-size: 92px; font-weight: 600; letter-spacing: -0.045em; line-height: 0.95; }
-  h1 span { display: block; color: var(--pass-text); }
-  .lede { max-width: 30ch; margin-top: 28px; color: var(--ink-soft); font-size: 25px; line-height: 1.4; }
-  .card { padding: 30px 32px 28px; border: 1px solid var(--rule-strong); border-radius: 14px; background: var(--panel); }
-  .card h2 { color: var(--ink-faint); font: 500 15px/1.3 "Geist Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; }
-  .bars { display: grid; gap: 20px; margin-top: 24px; list-style: none; }
-  .bar-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
-  .bar-label { color: var(--ink-soft); font-size: 19px; }
-  .bar-label.is-highlight { color: var(--ink); font-weight: 600; }
-  .bar-value { font: 500 22px/1 "Geist Mono", monospace; font-variant-numeric: tabular-nums; }
-  .is-highlight + .bar-value { color: var(--pass-text); }
-  .track { height: 14px; margin-top: 9px; overflow: hidden; border-radius: 3px; background: var(--fail); }
-  .fill { display: block; height: 100%; }
-  .track--baseline { background: color-mix(in srgb, var(--fail) 45%, var(--panel)); }
-  .track--baseline .fill { border: 1.5px dashed var(--pass-text); background: var(--panel); }
-  .card p { margin-top: 24px; color: var(--ink-faint); font: 400 14px/1.4 "Geist Mono", monospace; }
-  .footer { display: flex; gap: 40px; align-items: center; padding: 0 64px; border-top: 1px solid var(--rule); background: #000000; }
-  .footer img { width: 112px; height: auto; flex: none; }
-  .meta { display: grid; gap: 8px; color: var(--ink-faint); font: 400 15px/1.3 "Geist Mono", monospace; }
+  body { display: grid; grid-template-rows: 1fr 76px; color: var(--ink); font-family: "Geist", sans-serif; }
+  .main { padding: 30px 56px 12px; }
+  .eyebrow { display: flex; gap: 12px; align-items: center; color: var(--pass-text); font: 500 16px/1 "Geist Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; }
+  .eyebrow img { width: 26px; height: 26px; }
+  h1 { margin-top: 14px; font-size: 48px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; }
+  table { width: 100%; margin-top: 14px; border-collapse: separate; border-spacing: 0; color: var(--ink-soft); }
+  th, td { padding: 0 12px; height: 50px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+  th.stub, tbody th { width: 330px; text-align: left; }
+  tbody th { color: var(--ink); font-size: 20px; font-weight: 400; }
+  .num { text-align: right; }
+  thead th { height: 62px; border-bottom: 1px solid var(--rule-strong); color: var(--ink-soft); font-size: 17px; font-weight: 600; line-height: 1.2; vertical-align: bottom; padding-bottom: 8px; }
+  thead small { display: block; color: var(--ink-faint); font-size: 12px; font-weight: 400; }
+  td { font: 400 22px/1 "Geist Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.is-baseline, th.is-baseline { color: var(--ink-faint); }
+  .cell { display: inline-block; width: 128px; padding: 7px 14px; border-radius: 8px; text-align: right; }
+  .cell small { display: block; margin-top: 3px; color: var(--ink-faint); font-size: 12px; }
+  .cell.is-best { background: var(--pass); color: #ffffff; font-weight: 700; }
+  .cell.is-best small { color: rgba(255, 255, 255, 0.85); }
+  tr.has-counts th, tr.has-counts td { height: 72px; }
+  tr.is-verdict th, tr.is-verdict td:not(.is-featured) { border-top: 1px solid var(--rule-strong); }
+  tr.is-last th, tr.is-last td:not(.is-featured) { border-bottom: 2px solid var(--rule-strong); }
+  td.is-featured .cell:not(.is-best) { color: #ffffff; }
+  th.is-featured, td.is-featured { background: var(--pass-tint); border-left: 2px solid var(--pass); border-right: 2px solid var(--pass); }
+  thead th.is-featured { border-top: 2px solid var(--pass); border-radius: 12px 12px 0 0; color: #ffffff; }
+  .is-last td.is-featured { border-bottom: 2px solid var(--pass); border-radius: 0 0 12px 12px; }
+  .footer { display: flex; gap: 36px; align-items: center; padding: 0 56px; border-top: 1px solid var(--rule); background: #000000; }
+  .footer img { width: 96px; height: auto; flex: none; }
+  .meta { display: grid; gap: 6px; color: var(--ink-faint); font: 400 14px/1.3 "Geist Mono", monospace; }
   .meta span:first-child { color: var(--ink-soft); }
 </style></head>
 <body>
   <section class="main">
-    <div>
-      <p class="eyebrow"><img src="${dataUrl("public/brand/logo-mark.svg", "image/svg+xml")}" alt="" />${escape(card.eyebrow)}</p>
-      <h1>${escape(card.lead)}<span>${escape(card.keyword)}</span></h1>
-      <p class="lede">${escape(card.question)}</p>
-    </div>
-    <div class="card">
-      <h2>${escape(card.chartTitle)}</h2>
-      <ul class="bars">
-        ${card.bars
-          .map(
-            (b) => `<li>
-          <div class="bar-head"><span class="bar-label${b.highlight ? " is-highlight" : ""}">${escape(b.label)}</span><span class="bar-value">${pct(b.value)}</span></div>
-          <div class="track${b.baseline ? " track--baseline" : ""}"><span class="fill" style="width: ${(b.value * 100).toFixed(2)}%;${
-            b.baseline ? "" : ` background: color-mix(in srgb, var(--pass) ${b.shade * 100}%, var(--panel));`
-          }"></span></div>
-        </li>`,
-          )
-          .join("")}
-      </ul>
-      <p>Same model for every agent: ${escape(card.model)}</p>
-    </div>
+    <p class="eyebrow"><img src="${dataUrl("public/brand/logo-mark.svg", "image/svg+xml")}" alt="" />${escape(card.eyebrow)} · Key results</p>
+    <h1>${escape(card.title)}</h1>
+    <table>
+      <thead><tr><th class="stub"></th>${card.columns
+        .map(
+          (c) =>
+            `<th class="num${c.isFeatured ? " is-featured" : ""}${c.isBaseline ? " is-baseline" : ""}">${escape(c.label)}${c.isBaseline ? "<small>non-agentic baseline</small>" : ""}</th>`,
+        )
+        .join("")}</tr></thead>
+      <tbody>${card.rows
+        .map(
+          (row, r) => `<tr class="${row.cells.some((c) => c.counts) ? "has-counts " : ""}${row.isVerdict ? "is-verdict" : ""}${r === card.rows.length - 1 ? " is-last" : ""}"><th>${escape(row.label)} <span style="color: var(--ink-faint)">↑</span></th>${row.cells
+            .map(
+              (cell, i) =>
+                `<td class="num${card.columns[i].isFeatured ? " is-featured" : ""}${card.columns[i].isBaseline ? " is-baseline" : ""}"><span class="cell${cell.isBest ? " is-best" : ""}">${cell.value}${cell.counts ? `<small>${cell.counts}</small>` : ""}</span></td>`,
+            )
+            .join("")}</tr>`,
+        )
+        .join("")}</tbody>
+    </table>
   </section>
   <footer class="footer">
     <img src="${dataUrl("scripts/social/snyk-logo-white.png", "image/png")}" alt="Snyk" />
     <div class="meta">
       <span>Dataset ${escape(card.datasetVersion)} · ${card.attempts} upgrades in ${card.repos} real repositories across ${words[card.packageManagers] ?? card.packageManagers} package managers</span>
-      <span>Source: the VulnBump paper · Snyk, ${escape(card.paperDate)} · bars: purple passed, orange failed</span>
+      <span>Same model for all agents: ${escape(card.model)} · Snyk, ${escape(card.paperDate)} · filled cell = best agent per row</span>
     </div>
   </footer>
 </body></html>`;

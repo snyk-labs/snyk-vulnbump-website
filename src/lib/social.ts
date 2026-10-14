@@ -13,44 +13,74 @@ import type { Benchmark } from "../data/schema";
 export const SOCIAL_WIDTH = 1200;
 export const SOCIAL_HEIGHT = 630;
 /** Bump when the card's design changes, so its file name changes too. */
-const DESIGN_VERSION = 1;
+const DESIGN_VERSION = 2;
 
-export interface SocialBar {
-  label: string;
-  value: number;
-  /** Mix of the PASS purple into the panel, as on the site; absent for the baseline. */
-  shade?: number;
-  highlight: boolean;
-  baseline: boolean;
+export interface SocialCell {
+  /** "90.2%", or "100%" for a perfect rate. */
+  value: string;
+  /** The "(n/N)" line under PASS and instances fixed. */
+  counts: string | null;
+  isBest: boolean;
 }
 
-/** What the card shows, in the site's display order: highlighted agent, other agents, baseline. */
+export interface SocialColumn {
+  label: string;
+  isBaseline: boolean;
+  isFeatured: boolean;
+}
+
+export interface SocialRow {
+  label: string;
+  isVerdict: boolean;
+  cells: SocialCell[];
+}
+
+const percent = (x: number) => (x === 1 ? "100%" : `${(x * 100).toFixed(1)}%`);
+const integer = (n: number) => n.toLocaleString("en-US");
+
+/**
+ * What the card shows: the key results table from the home page, in its
+ * column order (baseline, then the agents) with the highlighted agent last.
+ */
 export function socialCard(data: Benchmark) {
-  const { configurations, baseline, release, model, scope, tagline, researchQuestion, paper } = data;
-  const agents = [
-    ...configurations.filter((c) => c.highlight),
-    ...configurations.filter((c) => !c.highlight).reverse(),
+  const { configurations, baseline, release, model, scope, metrics, paper } = data;
+  const entries = [
+    { c: baseline, isBaseline: true, isFeatured: false },
+    ...configurations.map((c) => ({ c, isBaseline: false, isFeatured: c.highlight })),
   ];
-  const shades = [1, 0.62, 0.34];
-  const bars: SocialBar[] = [
-    ...agents.map((c, i) => ({
-      label: c.label,
-      value: c.values.allGates ?? 0,
-      shade: shades[i] ?? shades.at(-1)!,
-      highlight: c.highlight,
-      baseline: false,
-    })),
-    { label: baseline.label, value: baseline.values.allGates ?? 0, highlight: false, baseline: true },
-  ];
+  const columns: SocialColumn[] = entries.map(({ c, isBaseline, isFeatured }) => ({
+    label: c.label,
+    isBaseline,
+    isFeatured,
+  }));
+  const rows: SocialRow[] = metrics
+    .filter((m) => m.key !== "projectWorks")
+    .map((metric) => {
+      const values = entries.map(({ c }) => c.values[metric.key] ?? 0);
+      // Best compares the agents only; the baseline is a reference.
+      const best = Math.max(...entries.flatMap((e, i) => (e.isBaseline ? [] : [Math.round(values[i]! * 1000)])));
+      return {
+        label: metric.label,
+        isVerdict: metric.kind === "verdict",
+        cells: entries.map(({ c, isBaseline }, i) => ({
+          value: percent(values[i]!),
+          counts:
+            metric.key === "allGates"
+              ? `(${integer(c.passed)}/${integer(c.attempts)})`
+              : metric.key === "instancesFixed"
+                ? `(${integer(c.vulnsCleared)}/${integer(c.vulnsFixable)})`
+                : null,
+          isBest: !isBaseline && Math.round(values[i]! * 1000) === best,
+        })),
+      };
+    });
   // "Snyk VulnBump 1.0" becomes "Snyk VulnBump Benchmark 1.0".
   const product = release.name.replace(release.shortName, "").trim();
   return {
     eyebrow: `${product} Benchmark ${release.shortName}`,
-    lead: tagline.lead,
-    keyword: tagline.keyword,
-    question: researchQuestion,
-    chartTitle: "Dependency upgrades pass rate",
-    bars,
+    title: "Four gates, one verdict",
+    columns,
+    rows,
     model: model.name,
     // The card outlives the draft, so it shows the release version without a pre-release tag.
     datasetVersion: release.datasetVersion.split("-")[0]!,
@@ -78,6 +108,7 @@ export function socialImagePath(card: SocialCard): string {
 
 /** Alt text that says what the image shows. */
 export function socialAlt(card: SocialCard): string {
-  const rates = card.bars.map((b) => `${b.label} ${(b.value * 100).toFixed(1)}%`).join(", ");
-  return `${card.eyebrow}: ${card.lead} ${card.keyword} ${card.chartTitle}: ${rates}.`;
+  const pass = card.rows.find((r) => r.isVerdict);
+  const rates = pass ? card.columns.map((c, i) => `${c.label} ${pass.cells[i]!.value}`).join(", ") : "";
+  return `${card.eyebrow} key results: ${card.title}. ${pass?.label ?? "All gates pass"}: ${rates}.`;
 }
