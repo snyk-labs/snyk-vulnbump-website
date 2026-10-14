@@ -3,18 +3,9 @@
 Static landing site for the Snyk VulnBump benchmark: what the benchmark
 measured, how, and the results, presented graphically. It shares a technical
 foundation with the [Snyk VulnBench website](https://vulnbench.com/) (Astro,
-typed data, accessible charts) but has its own visual identity: the "2b"
-Gatehouse theme (Snyk purple for PASS, orange for FAIL, solid fills only).
+typed data, accessible charts) but has its own visual identity.
 
-> **Status: draft.** Agent figures come from the three harness reports of the
-> 2026-10-04/05 single-upgrade runs (Evo Remediation Agent, harness `remy`;
-> Claude Code + Snyk scan; Claude Code unaided) in `snyk/remy-benchmark`
-> (`benchmarking/reports/*-easy`). The site follows the VulnBump paper of
-> 12 October 2026 (Pasiunaite et al.), including its names and its
-> non-agentic baseline, the package manager bump; the six findings on the
-> results page were drawn from it and reviewed. Every agent
-> number in the paper is reproduced here and agrees with the reports. While `release.status` is `"draft"`, the header tag reads
-> "1.0 draft" and every page is marked `noindex`.
+**Status: draft**
 
 ## Stack
 
@@ -24,7 +15,6 @@ Gatehouse theme (Snyk purple for PASS, orange for FAIL, solid fills only).
   build time
 - Geist / Geist Mono on Snyk Midnight (dark-only, per the 2026 brand rules)
 - Vitest for the data contract and chart server rendering
-- Deployed on Vercel (`vercel.json`)
 
 ## Local development
 
@@ -40,29 +30,7 @@ npm run social     # re-render the social share card (needs a local Chrome, Brav
 ## The benchmark data
 
 The whole site renders from **one file**: `src/data/benchmark.json`,
-validated by `src/data/schema.ts`. The `configurations` figures are computed
-from the harness reports with the harness's own report code
-(`functional.pdf_report`, against `cases-43/cases.yaml`), not copied from a
-PDF, so rates keep full precision. Per-attempt recomputation confirms the
-paper's derived figures too (per-gate rates, paired discordant counts, version
-jumps, macro rates, first failed gate). A few values exist only in the paper
-and are taken from it as published: the Table 4 root causes (manually
-annotated), the production distributions, and the related-work comparison
-(Table 1). The package manager bump ran outside the harness reports
-(8 October), so its figures (`baseline`, `adviceSplit`, and its columns in
-`rootCauses`) come from the paper alone, its Figure 6 shares to whole percent;
-the schema checks them for internal consistency (gate rates against counts,
-flow against Figure 4, jumps and breakdown buckets against the agents', each
-agent's split against its PASS count).
-
-The paper reports fewer derived statistics than draft v2 did, and the site
-follows it: macro PASS rates without intervals, paired significance by
-cluster bootstrap only (no McNemar tests), and the advice split as PASS
-rates, regressions and gains. The per-package-manager macro rates, cost and
-latency, and the integrity signals come from the harness reports; the paper
-states only the conclusions they support, or does not cover them.
-
-The build fails if the data breaks the schema or its arithmetic: every rate
+validated by `src/data/schema.ts`. The build fails if the data breaks the schema or its arithmetic: every rate
 must equal its counts, gate counts must never grow, ecosystem rows must sum to
 each configuration's totals, every breakdown must cover all fixable
 vulnerabilities, remaining vulnerabilities must equal fixable minus cleared,
@@ -99,33 +67,6 @@ To add a new run, add or replace a configuration object; exactly one must be
 `"highlight": true`. Downloads are generated from the same data at build time:
 `/data/benchmark.json`, `/data/comparison.csv`, `/data/ecosystems.csv`,
 `/data/breakdowns.csv`.
-
-## Design
-
-The site uses the **2b "Gatehouse" theme** from the Claude Design handoff
-(`design_handoff_vulnbump_2b/`): every upgrade passes or fails four gates, so
-PASS is solid purple and FAIL solid orange, with no gradients.
-
-- **Tokens** (`src/styles/tokens.css`, from the handoff's drop-in): `--paper`
-  #0B0613, `--panel` #14091F, `--pass` #8F3CE8 (text tint `--pass-text`
-  #C481F3), `--fail` #FF8904 and the fail stack by gate, `--accent` and the
-  focus ring. Every older token name is kept, so `--pink` now means the
-  lavender accent.
-- **Theme** (`src/styles/theme-2b.css`, loaded after `global.css` by
-  `BaseLayout`): buttons, eyebrows, the lane grid, leaderboard, pills, caveats
-  and fail stacks. Its pass-on-fail bar is `.passtrack`; the handoff's `.track`
-  name was already used by the existing charts.
-- **Agent shades**: the highlighted agent is solid `--pass`; the others are
-  `--pass` mixed into the panel at the theme's fixed steps (0.62 for Claude
-  Code + Snyk scan, 0.34 for Claude Code unaided), so counts inside the bars
-  stay legible. The non-agentic baseline is a dashed outline.
-- **Type**: Geist 600 headlines (tracking -0.04em), Geist Mono for labels and
-  numbers. Purple #8F3CE8 is about 3.9:1 on the paper, so it carries fills,
-  never small text.
-
-The 2b palette departs from the Snyk 2026 locked palette, so the brand's
-mechanical audit (`apply-brand-guidelines/scripts/audit_html.py`) flags it;
-brand review signs off on the theme as a whole.
 
 ## Charts
 
@@ -165,20 +106,6 @@ crawlers fetch a new image when the numbers change, and the production build
 fails with "Social card … is missing or stale" until you run `npm run social`
 and commit the new PNG. Bump `DESIGN_VERSION` there when the card's design
 changes. Set `CHROME_PATH` if the script cannot find a Chromium-based browser.
-
-## Deploying to Vercel
-
-1. Import `snyk-labs/snyk-vulnbump-website` in Vercel. The Astro preset and
-   `vercel.json` already set install/build commands and `dist` as output.
-2. Set `SITE_URL` (for example `https://vulnbump.com`) so canonical URLs, the
-   sitemap and the social card's absolute image URL use the production domain. Without it, Vercel's production hostname
-   is used.
-3. Before launch, set `release.status` to `"published"` (and `publishedAt`) in
-   `src/data/benchmark.json`.
-
-`vercel.json` serves clean URLs without trailing slashes, caches hashed
-`/_astro/*` assets for a year, and sets baseline security headers. No analytics
-are included.
 
 ## Project layout
 
