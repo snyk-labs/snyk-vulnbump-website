@@ -15,8 +15,7 @@
   "studyLabel": "A benchmark for fixing vulnerable dependencies in real projects while keeping the build and tests green",
   "summary": "VulnBump is 307 upgrade tasks covering 2,066 fixable vulnerabilities in 43 repositories across six package managers, matched to Snyk Open Source production vulnerability distributions. An upgrade passes only if, in a fresh container, dependencies resolve, a rescan shows the targeted vulnerabilities fixed, the project builds, and every previously passing test still passes. All three agents use the same model, Claude Sonnet 5.5, and a non-agentic baseline that only applies Snyk's recommended version shows how much of the work that advice already does.",
   "links": {
-    "paper": null,
-    "publication": null,
+    "paper": "https://arxiv.org/abs/2610.17374",
     "github": "https://github.com/snyk-labs/snyk-vulnbump",
     "harness": "https://github.com/snyk-labs/snyk-vulnbump"
   },
@@ -1317,7 +1316,7 @@
       "Luke Tu"
     ],
     "year": 2026,
-    "url": null
+    "url": "https://arxiv.org/abs/2610.17374"
   },
   "selection": {
     "collected": 805,

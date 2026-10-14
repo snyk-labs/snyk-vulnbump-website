@@ -11,7 +11,6 @@ const { tagline, headline, flowSteps } = benchmark;
 const metric = getMetric(headline.metric);
 const value = highlighted.values[metric.key] ?? 0;
 const gates = countWord(flowSteps.length - 1).toLowerCase();
-// Set links.paper in benchmark.json once the whitepaper is published.
 const paperUrl = benchmark.links.paper;
 ---
 

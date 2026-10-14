@@ -216,7 +216,6 @@ export const benchmarkSchema = z
     }),
     links: z.object({
       paper: optionalUrl,
-      publication: optionalUrl,
       github: optionalUrl,
       harness: optionalUrl,
     }),
