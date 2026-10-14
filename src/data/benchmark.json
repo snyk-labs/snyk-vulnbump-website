@@ -265,11 +265,6 @@
     {
       "id": "ecosystem",
       "label": "Package manager"
-    },
-    {
-      "id": "severity",
-      "label": "Severity",
-      "note": "Evaluation-time scans rate none of the fixable instances critical."
     }
   ],
   "failureReasons": [
@@ -568,26 +563,6 @@
             "n": 127,
             "fixRate": 0.976378,
             "passRate": 0.787402
-          }
-        ],
-        "severity": [
-          {
-            "label": "High",
-            "n": 1035,
-            "fixRate": 0.727536,
-            "passRate": 0.397101
-          },
-          {
-            "label": "Medium",
-            "n": 872,
-            "fixRate": 0.744266,
-            "passRate": 0.392202
-          },
-          {
-            "label": "Low",
-            "n": 159,
-            "fixRate": 0.63522,
-            "passRate": 0.188679
           }
         ]
       },
@@ -888,26 +863,6 @@
             "n": 127,
             "fixRate": 1.0,
             "passRate": 1.0
-          }
-        ],
-        "severity": [
-          {
-            "label": "High",
-            "n": 1035,
-            "fixRate": 0.861836,
-            "passRate": 0.670531
-          },
-          {
-            "label": "Medium",
-            "n": 872,
-            "fixRate": 0.808486,
-            "passRate": 0.611239
-          },
-          {
-            "label": "Low",
-            "n": 159,
-            "fixRate": 0.748428,
-            "passRate": 0.421384
           }
         ]
       },
@@ -1223,26 +1178,6 @@
             "n": 127,
             "fixRate": 1.0,
             "passRate": 1.0
-          }
-        ],
-        "severity": [
-          {
-            "label": "High",
-            "n": 1035,
-            "fixRate": 0.966184,
-            "passRate": 0.802899
-          },
-          {
-            "label": "Medium",
-            "n": 872,
-            "fixRate": 0.959862,
-            "passRate": 0.793578
-          },
-          {
-            "label": "Low",
-            "n": 159,
-            "fixRate": 0.91195,
-            "passRate": 0.578616
           }
         ]
       },

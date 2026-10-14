@@ -287,8 +287,8 @@ describe("benchmark dataset", () => {
 
   it("rejects a breakdown that does not cover every vulnerability", () => {
     const data = clone();
-    data.configurations[1].breakdowns.severity[0].n -= 1;
-    expect(messages(data).some((m) => /"severity" covers/.test(m))).toBe(true);
+    data.configurations[1].breakdowns.upgradeSize[0].n -= 1;
+    expect(messages(data).some((m) => /"upgradeSize" covers/.test(m))).toBe(true);
   });
 
   it("rejects bump jumps on different upgrades than the agents'", () => {
