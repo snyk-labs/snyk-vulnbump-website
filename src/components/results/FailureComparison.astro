@@ -25,6 +25,8 @@ const stacks = [
   ...displayOrder(configurations).map((c) => column(c, c.highlight, false)),
   column(baseline, false, true),
 ].map((c) => ({ ...c, segments: firstFailedGates(c), failures: c.attempts - c.passed }));
+/** Every stack shares one scale, so a bar's length is its failure count against the largest. */
+const maxFailures = Math.max(...stacks.map((s) => s.failures));
 const stageNames = ["dependencies", "rescan", "build", "tests"];
 ---
 
@@ -41,11 +43,18 @@ const stageNames = ["dependencies", "rescan", "build", "tests"];
           </div>
           <div
             class="failstack"
+            style={`width: ${(s.failures / maxFailures) * 100}%`}
             role="img"
             aria-label={`${s.label}: ${s.segments.map((g, i) => `${g.count} failed first at ${stageNames[i]}`).join(", ")}`}
           >
             {s.segments.map((g) => (
-              <span style={g.count > 0 ? `flex: ${g.count} 0 0` : "flex: 0 0 0; padding: 0"}>
+              <span
+                style={
+                  g.count > 0
+                    ? `flex: ${g.count} 0 0${g.count < 5 ? "; padding: 0; justify-content: center" : ""}`
+                    : "flex: 0 0 0; padding: 0"
+                }
+              >
                 {g.count > 0 ? formatInteger(g.count) : ""}
               </span>
             ))}
