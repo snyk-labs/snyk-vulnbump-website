@@ -81,7 +81,7 @@ const html = `<!doctype html>
         .join("")}</tr></thead>
       <tbody>${card.rows
         .map(
-          (row, r) => `<tr class="${row.cells.some((c) => c.counts) ? "has-counts " : ""}${row.isVerdict ? "is-verdict" : ""}${r === card.rows.length - 1 ? " is-last" : ""}"><th>${escape(row.label)} <span style="color: var(--ink-faint)">↑</span></th>${row.cells
+          (row, r) => `<tr class="${row.cells.some((c) => c.counts) ? "has-counts " : ""}${row.isVerdict ? "is-verdict" : ""}${r === card.rows.length - 1 ? " is-last" : ""}"><th>${escape(row.label)}</th>${row.cells
             .map(
               (cell, i) =>
                 `<td class="num${card.columns[i].isFeatured ? " is-featured" : ""}${card.columns[i].isBaseline ? " is-baseline" : ""}"><span class="cell${cell.isBest ? " is-best" : ""}">${cell.value}${cell.counts ? `<small>${cell.counts}</small>` : ""}</span></td>`,
