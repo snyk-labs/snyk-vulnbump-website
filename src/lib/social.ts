@@ -13,7 +13,7 @@ import type { Benchmark } from "../data/schema";
 export const SOCIAL_WIDTH = 1200;
 export const SOCIAL_HEIGHT = 630;
 /** Bump when the card's design changes, so its file name changes too. */
-const DESIGN_VERSION = 2;
+const DESIGN_VERSION = 3;
 
 export interface SocialCell {
   /** "90.2%", or "100%" for a perfect rate. */
@@ -82,8 +82,7 @@ export function socialCard(data: Benchmark) {
     columns,
     rows,
     model: model.name,
-    // The card outlives the draft, so it shows the release version without a pre-release tag.
-    datasetVersion: release.datasetVersion.split("-")[0]!,
+    datasetVersion: release.datasetVersion,
     attempts: configurations[0]?.attempts ?? 0,
     repos: configurations[0]?.repos ?? 0,
     packageManagers: scope.find((s) => s.label === "package managers")?.value ?? 0,

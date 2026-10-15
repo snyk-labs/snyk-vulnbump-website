@@ -180,7 +180,7 @@ export const benchmarkSchema = z
       name: nonEmpty,
       shortName: nonEmpty,
       datasetVersion: nonEmpty,
-      /** "draft" shows a review banner and marks every page noindex. */
+      /** "draft" tags the header and marks every page noindex; "published" is indexable. */
       status: z.enum(["draft", "published"]),
       publishedAt: z.iso.date().nullable(),
       runDate: z.iso.date(),

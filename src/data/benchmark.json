@@ -2,9 +2,9 @@
   "release": {
     "name": "Snyk VulnBump 1.0",
     "shortName": "1.0",
-    "datasetVersion": "1.0.0-draft",
-    "status": "draft",
-    "publishedAt": null,
+    "datasetVersion": "1.0.0",
+    "status": "published",
+    "publishedAt": "2026-10-15",
     "runDate": "2026-10-05"
   },
   "tagline": {

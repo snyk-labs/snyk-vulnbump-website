@@ -5,8 +5,6 @@ measured, how, and the results, presented graphically. It shares a technical
 foundation with the [Snyk VulnBench website](https://vulnbench.com/) (Astro,
 typed data, accessible charts) but has its own visual identity.
 
-**Status: draft**
-
 ## Stack
 
 - [Astro 7](https://astro.build/) static output, with React islands only for
